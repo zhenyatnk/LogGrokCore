@@ -6,7 +6,6 @@
                     xmlns:gridView="clr-namespace:LogGrokCore.Controls.GridView">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/themes/light.blue.xaml" />
     </ResourceDictionary.MergedDictionaries>
     <controls:ObjectToTypeConverter x:Key="ObjectToTypeConverter" />
     

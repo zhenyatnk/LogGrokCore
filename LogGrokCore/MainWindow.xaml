@@ -22,6 +22,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
+                <ResourceDictionary Source="Themes/generic.xaml" />
                 <ResourceDictionary Source="Styles/DocumentTemplate.xaml" />
                 <ResourceDictionary Source="Styles/MarkedLinesViewTemplate.xaml" />
                 <ResourceDictionary Source="Styles/ListViewItemStyle.xaml" />
