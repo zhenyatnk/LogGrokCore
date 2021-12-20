@@ -7,6 +7,7 @@
                     xmlns:localBehaviors="clr-namespace:LogGrokCore.AvalonDock"
                     xmlns:controls="clr-namespace:LogGrokCore.Controls"
                     xmlns:search="clr-namespace:LogGrokCore.Search"
+                    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
                     xmlns:listControls="clr-namespace:LogGrokCore.Controls.ListControls"
                     xmlns:virtualizingStackPanel="clr-namespace:LogGrokCore.Controls.ListControls.VirtualizingStackPanel"
                     xmlns:behaviors="clr-namespace:WPFTextBoxAutoComplete;assembly=WPFTextBoxAutoComplete"
@@ -15,10 +16,10 @@
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="ListViewItemStyle.xaml" />
         <ResourceDictionary Source="ToggleButtonStyle.xaml" />
+        <ResourceDictionary Source="ButtonStyle.xaml" />
         <ResourceDictionary Source="LogViewContextMenu.xaml"/>
         <ResourceDictionary Source="../Resources/Icons.xaml" />
         <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/themes/light.blue.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Xceed.Wpf.AvalonDock.Themes.Metro;component/Theme.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
@@ -70,7 +71,8 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -108,8 +110,39 @@
                            FontWeight="Bold"
                            Text="(.*)" />
             </ToggleButton>
+            <Button Grid.Row="0"
+                          Grid.Column="3"
+                          Margin="0,0,2,0"
+                          HorizontalContentAlignment="Center"
+                          VerticalContentAlignment="Center"
+                          BorderThickness="0"
+                          Style="{StaticResource SearchOptionButtonStyle}"
+                          ToolTip="Select favorites regexp">
+                <iconPacks:PackIconMaterial Kind="PlaylistStar"
+                                                                        VerticalAlignment="Center"
+                                                                        HorizontalAlignment="Center"
+                                                                        Width="15"
+                                                                        Height="15"
+                                                                        SnapsToDevicePixels="False" />
+            </Button>
+            <Button Grid.Row="0"
+                          Grid.Column="4"
+                          Margin="0,0,2,0"
+                          HorizontalContentAlignment="Center"
+                          VerticalContentAlignment="Center"
+                          BorderThickness="0"
+                          Style="{StaticResource SearchOptionButtonStyle}"
+                          ToolTip="Add regexp to favorites">
+                <iconPacks:PackIconMaterial Kind="StarPlus"
+                                                                        VerticalAlignment="Center"
+                                                                        HorizontalAlignment="Center"
+                                                                        Width="15"
+                                                                        Height="15"
+                                                                        SnapsToDevicePixels="False" />
+            </Button>
             <TextBox Grid.Row="0"
                      Grid.Column="2"
+                     Margin="0,0,2,0"
                      Text="{Binding TextToSearch,
                                         UpdateSourceTrigger=PropertyChanged,
                                         NotifyOnValidationError=True,

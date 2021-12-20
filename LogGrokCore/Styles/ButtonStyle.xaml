@@ -1,17 +1,16 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Style x:Key="SearchOptionToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+    <Style x:Key="SearchOptionButtonStyle" TargetType="{x:Type Button}">
         <Setter Property="IsTabStop" Value="True" />
         <Setter Property="Focusable" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                <ControlTemplate TargetType="{x:Type Button}">
                     <Border Name="Border"
                             Width="20"
                             Height="20"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
                             SnapsToDevicePixels="True">
                         <Border.Child>
                             <ContentPresenter Name="Image"
@@ -21,18 +20,11 @@
                         </Border.Child>
                     </Border>
                     <ControlTemplate.Triggers>
-
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Border" Property="BorderThickness" Value="1" />
-                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource MahApps.Brushes.Accent}" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Border" Property="BorderThickness" Value="1" />
-                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource MahApps.Brushes.Accent}" />
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource MahApps.Brushes.Button.Flat.Background.Pressed}" />
-                        </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Border" Property="Background" Value="{StaticResource MahApps.Brushes.Button.Flat.Background.MouseOver}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource MahApps.Brushes.Button.Flat.Foreground.Pressed}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

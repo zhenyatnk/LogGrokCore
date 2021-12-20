@@ -8,7 +8,6 @@
                     mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/themes/light.blue.xaml" />
         <ResourceDictionary Source="LogViewTemplate.xaml" />
         <ResourceDictionary Source="DocumentSearchTemplate.xaml" />
     </ResourceDictionary.MergedDictionaries>

@@ -31,7 +31,7 @@
                             <Setter Property="BorderThickness" Value="0" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding FilterViewModel.IsFilterApplied}" Value="True">
-                            <Setter Property="BorderBrush" Value="{StaticResource ToggleButtonGoldBorder}" />
+                            <Setter Property="BorderBrush" Value="{StaticResource MahApps.Brushes.Button.Border}" />
                             <Setter Property="BorderThickness" Value="1" />
                         </DataTrigger>
                     </Style.Triggers>
