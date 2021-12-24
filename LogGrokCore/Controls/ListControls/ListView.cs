@@ -60,8 +60,7 @@ namespace LogGrokCore.Controls.ListControls
                     {
                         foreach (var item in items)
                         {
-                            if (!item.IsMarked)
-                                item.IsMarked = !item.IsMarked;
+                            item.IsMarked = !item.IsMarked;
                         }
                     }
                     args.Handled = true;
