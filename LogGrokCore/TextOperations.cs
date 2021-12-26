@@ -179,16 +179,23 @@ namespace LogGrokCore
         }
         private static string FormatJsonText(string jsonString)
         {
-            using var doc = JsonDocument.Parse(jsonString, new JsonDocumentOptions { AllowTrailingCommas = true });
-            var memoryStream = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(memoryStream, 
-                       new JsonWriterOptions { Indented = true, 
-                                               Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+            try
             {
-                doc.WriteTo(writer);
+                using var doc = JsonDocument.Parse(jsonString, new JsonDocumentOptions { AllowTrailingCommas = true });
+                var memoryStream = new MemoryStream();
+                using (var writer = new Utf8JsonWriter(memoryStream, 
+                           new JsonWriterOptions { Indented = true, 
+                                                   Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+                {
+                    doc.WriteTo(writer);
+                }
+                return new UTF8Encoding()
+                    .GetString(memoryStream.ToArray());
             }
-            return new UTF8Encoding()
-                .GetString(memoryStream.ToArray());
+            catch (JsonException)
+            {
+                return jsonString;
+            }
         }
         
         private static int SkipLines(ReadOnlySpan<char> source, uint linesToSkip)
