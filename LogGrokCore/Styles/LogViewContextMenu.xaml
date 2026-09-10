@@ -36,7 +36,8 @@
         d:DataContext="{d:DesignInstance Type={x:Type listControls:ListView}, IsDesignTimeCreatable=False}"
         x:Key="LogViewContextMenu"
         DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
-        <MenuItem Command="logGrokCore:RoutedCommands.CopyToClipboard"
+        <MenuItem Command="logGrokCore:RoutedCommands.CopyAsDisplayed"
+                  Header="Copy"
                   Visibility="{Binding RelativeSource={RelativeSource Self},
                                               Path=IsEnabled,
                                               Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -45,6 +46,18 @@
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     Kind="ContentCopy" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Command="logGrokCore:RoutedCommands.CopyToClipboard"
+                  Header="Copy as native"
+                  Visibility="{Binding RelativeSource={RelativeSource Self},
+                                              Path=IsEnabled,
+                                              Converter={StaticResource BooleanToVisibilityConverter}}">
+            <MenuItem.Icon>
+                <iconPacks:PackIconMaterial
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Kind="ContentPaste" />
             </MenuItem.Icon>
         </MenuItem>
         <MenuItem Command="logGrokCore:RoutedCommands.ToggleMarks"

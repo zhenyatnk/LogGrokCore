@@ -17,8 +17,6 @@ namespace LogGrokCore.MarkedLines
         
         public ObservableCollection<MarkedLineViewModel> MarkedLines => _markedLines;
 
-        public DelegateCommand CopyLinesCommand { get; }
-
         public DelegateCommand ItemActivatedCommand { get; }
 
         public bool HaveMarkedLines => _markedLines.Count != 0;
@@ -39,19 +37,6 @@ namespace LogGrokCore.MarkedLines
                 SubscribeToNewDocumentChanges(_documents);
                 UpdateLinesCollection();
             };
-
-            CopyLinesCommand = new DelegateCommand(
-                o =>
-                {
-                    var document = (DocumentViewModel) o;
-                    var linesToCopy =
-                        $"{document.Title}:".Yield().Concat(
-                        MarkedLines.Where(m => m.Document == document)
-                            .OrderBy(m => m.Index)
-                            .Select(m => m.ToString().Trim('\0').TrimEnd()));
-
-                    TextCopy.ClipboardService.SetText(string.Join("\r\n", linesToCopy));
-                });
 
             ItemActivatedCommand = new DelegateCommand(
                 o =>

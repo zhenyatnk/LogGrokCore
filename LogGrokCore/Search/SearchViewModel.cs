@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 using LogGrokCore.Controls;
@@ -28,9 +30,13 @@ namespace LogGrokCore.Search
             
         private SearchDocumentViewModel? _currentDocument;
         private readonly SearchAutocompleteCache _searchAutocompleteCache;
+        private readonly SavedSearchPatternStore _savedSearchPatternStore;
+        private string _savedSearchFilter = string.Empty;
+        private string _newSearchName = string.Empty;
 
         public SearchViewModel(Func<SearchPattern, SearchDocumentViewModel> searchDocumentViewModelFactory,
-            SearchAutocompleteCache searchAutocompleteCache)
+            SearchAutocompleteCache searchAutocompleteCache,
+            SavedSearchPatternStore savedSearchPatternStore)
         {
             _searchDocumentViewModelFactory =
                 pattern =>
@@ -45,9 +51,17 @@ namespace LogGrokCore.Search
             AddNewSearchCommand = new DelegateCommand(() => AddNewSearch(_searchPattern.Clone()));
             SearchTextCommand = new DelegateCommand(SearchText, text => !string.IsNullOrEmpty(text as string));
             Activate = new DelegateCommand(() => SetFocusRequest.Invoke());
+            SaveSearchCommand = new DelegateCommand(SaveCurrentSearch);
+            ApplySavedSearchCommand = DelegateCommand.Create<SavedSearchPattern>(ApplySavedSearch);
+            BeginEditSavedSearchCommand = DelegateCommand.Create<SavedSearchPattern>(BeginEditSavedSearch);
+            CommitEditSavedSearchCommand = DelegateCommand.Create<SavedSearchPattern>(CommitEditSavedSearch);
+            CancelEditSavedSearchCommand = DelegateCommand.Create<SavedSearchPattern>(CancelEditSavedSearch);
+            DeleteSavedSearchCommand = DelegateCommand.Create<SavedSearchPattern>(DeleteSavedSearch);
 
             Documents = new ObservableCollection<SearchDocumentViewModel>();
             _searchAutocompleteCache = searchAutocompleteCache;
+            _savedSearchPatternStore = savedSearchPatternStore;
+            SavedSearches = new ListCollectionView(_savedSearchPatternStore.Items);
         }
         public event Action<int>? CurrentLineChanged;
 
@@ -108,6 +122,29 @@ namespace LogGrokCore.Search
 
         public IEnumerable<string> AutoCompleteList => _searchAutocompleteCache.Items;
 
+        public ListCollectionView SavedSearches { get; }
+
+        public string SavedSearchFilter
+        {
+            get => _savedSearchFilter;
+            set
+            {
+                if (_savedSearchFilter == value) return;
+                _savedSearchFilter = value;
+                InvokePropertyChanged();
+                SavedSearches.Filter = string.IsNullOrWhiteSpace(value)
+                    ? (Predicate<object>?) null
+                    : o => o is SavedSearchPattern pattern && pattern.MatchesFilter(value);
+                SavedSearches.Refresh();
+            }
+        }
+
+        public string NewSearchName
+        {
+            get => _newSearchName;
+            set => SetAndRaiseIfChanged(ref _newSearchName, value);
+        }
+
         public string this[string columnName] =>
             columnName switch
             {
@@ -125,6 +162,65 @@ namespace LogGrokCore.Search
         public ICommand CloseDocumentCommand { get; }
 
         public ICommand AddNewSearchCommand { get; }
+
+        public ICommand SaveSearchCommand { get; }
+
+        public ICommand ApplySavedSearchCommand { get; }
+
+        public ICommand BeginEditSavedSearchCommand { get; }
+
+        public ICommand CommitEditSavedSearchCommand { get; }
+
+        public ICommand CancelEditSavedSearchCommand { get; }
+
+        public ICommand DeleteSavedSearchCommand { get; }
+
+        private void SaveCurrentSearch()
+        {
+            if (_searchPattern.IsEmpty) return;
+
+            var name = string.IsNullOrWhiteSpace(NewSearchName)
+                ? _searchPattern.Pattern
+                : NewSearchName.Trim();
+
+            _savedSearchPatternStore.AddOrUpdate(name, _searchPattern);
+            NewSearchName = string.Empty;
+        }
+
+        private void ApplySavedSearch(SavedSearchPattern savedSearchPattern)
+        {
+            var searchPattern = savedSearchPattern.ToSearchPattern();
+            if (!searchPattern.IsValid) return;
+
+            _textToSearch = searchPattern.Pattern;
+            _isCaseSensitive = searchPattern.IsCaseSensitive;
+            _useRegex = searchPattern.UseRegex;
+
+            InvokePropertyChanged(nameof(TextToSearch));
+            InvokePropertyChanged(nameof(IsCaseSensitive));
+            InvokePropertyChanged(nameof(UseRegex));
+
+            CommitSearchPatternImmediately(_textToSearch, _isCaseSensitive, _useRegex);
+        }
+
+        private void BeginEditSavedSearch(SavedSearchPattern savedSearchPattern) =>
+            savedSearchPattern.BeginEdit();
+
+        private void CommitEditSavedSearch(SavedSearchPattern savedSearchPattern)
+        {
+            var editedPattern = new SearchPattern(savedSearchPattern.EditPattern,
+                savedSearchPattern.IsCaseSensitive, savedSearchPattern.UseRegex);
+            if (!editedPattern.IsValid) return;
+
+            savedSearchPattern.CommitEdit();
+            _savedSearchPatternStore.Save();
+        }
+
+        private void CancelEditSavedSearch(SavedSearchPattern savedSearchPattern) =>
+            savedSearchPattern.CancelEdit();
+
+        private void DeleteSavedSearch(SavedSearchPattern savedSearchPattern) =>
+            _savedSearchPatternStore.Remove(savedSearchPattern);
 
         private void CommitSearchPattern<T>(ref T field, T newValue, TimeSpan timeSpan, [CallerMemberName] string? propertyName = null)
         {

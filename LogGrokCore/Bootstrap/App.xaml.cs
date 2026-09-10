@@ -69,6 +69,7 @@ namespace LogGrokCore.Bootstrap
         protected override void OnExit(ExitEventArgs e)
         {
             _container.Resolve<SearchAutocompleteCache>().Save();
+            _container.Resolve<SavedSearchPatternStore>().Save();
             _container.Dispose();
         }
 
@@ -77,6 +78,7 @@ namespace LogGrokCore.Bootstrap
             container.RegisterDelegate(ApplicationSettings.Instance);
             container.Register<MainWindowViewModel>(Reuse.Singleton);
             container.Register<SearchAutocompleteCache>(Reuse.Singleton); 
+            container.Register<SavedSearchPatternStore>(Reuse.Singleton);
             container.Register<MarkedLinesViewModel>();
             container.Register<MainWindow>();
         }

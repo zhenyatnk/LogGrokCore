@@ -1,5 +1,6 @@
 ﻿using System;
 using LogGrokCore.Colors;
+using LogGrokCore.Controls.TextRender;
 
 namespace LogGrokCore.MarkedLines
 {
@@ -20,5 +21,17 @@ namespace LogGrokCore.MarkedLines
         }
 
         public override string ToString() => Text.OriginalText ?? string.Empty;
+
+        public override string GetDisplayText(TextViewSharedFoldingState? foldingState)
+        {
+            var textModel = Text.TextModel;
+            if (foldingState == null || textModel.CollapsibleRanges == null)
+                return textModel.GetDisplayedText(null);
+
+            var collapsedLines = foldingState[textModel.UniqueId]
+                                 ?? foldingState.GetDefaultSettings(textModel.CollapsibleRanges, textModel.Count);
+
+            return textModel.GetDisplayedText(collapsedLines);
+        }
     }
 }

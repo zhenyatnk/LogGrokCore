@@ -140,6 +140,14 @@ namespace LogGrokCore
             return MakeResult(result);
         }
 
+        public static string FormatInlineJson(string source)
+        {
+            var jsonIntervals = GetJsonRanges(source).ToList();
+            return jsonIntervals.Count == 0
+                ? source
+                : FormatInlineJson(source.AsSpan(), jsonIntervals.ToArray().AsSpan());
+        }
+
         public static string FormatInlineJson(ReadOnlySpan<char> text,
             ReadOnlySpan<(int start, int length)> jsonIntervals)
         {

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using LogGrokCore.Data;
 using LogGrokCore.Data.Index;
 using Microsoft.Toolkit.HighPerformance;
@@ -226,6 +227,39 @@ public class TextModel : IReadOnlyList<StringRange>
         }
 
         return (lines, result);
+    }
+
+    public string GetDisplayedText(IReadOnlySet<int>? collapsedLines)
+    {
+        if (_textLines == null)
+            return (_sourceText?.ToString() ?? string.Empty).TrimEnd();
+
+        var collapsedRanges = CollapsibleRanges == null || collapsedLines == null
+            ? null
+            : CollapsibleRanges.Where(r => collapsedLines.Contains(r.start))
+                .ToDictionary(r => r.start, r => r.length);
+
+        var builder = new StringBuilder();
+        for (var i = 0; i < _textLines.Count; i++)
+        {
+            if (collapsedRanges != null && collapsedRanges.TryGetValue(i, out var length))
+            {
+                var substitution = GetCollapsedTextSubstitution(i);
+                builder.Append(substitution.IsEmpty
+                    ? _textLines[i].ToString().TrimEnd().TrimEnd('{') + "{...}"
+                    : substitution.ToString());
+                i += length - 1;
+            }
+            else
+            {
+                builder.Append(_textLines[i].ToString());
+            }
+
+            if (i < _textLines.Count - 1)
+                builder.Append(Environment.NewLine);
+        }
+
+        return builder.ToString().TrimEnd();
     }
 
     public override string ToString()

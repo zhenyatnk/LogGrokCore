@@ -17,7 +17,12 @@ namespace LogGrokCore
         public static readonly RoutedCommand ClearFilters = new RoutedUICommand(
             "Clear filters", "Clear filters", typeof(UIElement));
 
-        public static readonly RoutedUICommand CopyToClipboard;
+        public static readonly RoutedUICommand CopyToClipboard = new RoutedUICommand(
+            "Copy as native", nameof(CopyToClipboard), typeof(UIElement));
+
+        public static readonly RoutedUICommand CopyAsDisplayed = new RoutedUICommand(
+            "Copy", nameof(CopyAsDisplayed), typeof(UIElement),
+            new InputGestureCollection(ApplicationCommands.Copy.InputGestures));
 
         public static readonly RoutedCommand ToggleMarks = new RoutedUICommand(
             "Mark", "Mark lines", typeof(UIElement),
@@ -45,11 +50,6 @@ namespace LogGrokCore
 
         static RoutedCommands()
         {
-            CopyToClipboard = new RoutedUICommand(
-                ApplicationCommands.Copy.Text,
-                nameof(CopyToClipboard),
-                typeof(UIElement), new InputGestureCollection(ApplicationCommands.Copy.InputGestures));
-
             ApplicationCommands.Copy.InputGestures.Clear();
         }
     }

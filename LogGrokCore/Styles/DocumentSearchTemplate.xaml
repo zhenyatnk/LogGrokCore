@@ -8,6 +8,7 @@
                     xmlns:listControls="clr-namespace:LogGrokCore.Controls.ListControls"
                     xmlns:virtualizingStackPanel="clr-namespace:LogGrokCore.Controls.ListControls.VirtualizingStackPanel"
                     xmlns:behaviors="clr-namespace:WPFTextBoxAutoComplete;assembly=WPFTextBoxAutoComplete"
+                    xmlns:filterPopup="clr-namespace:LogGrokCore.Controls.FilterPopup"
                     xmlns:textRender="clr-namespace:LogGrokCore.Controls.TextRender"
                     xmlns:avalonDockExtensions="clr-namespace:LogGrokCore.AvalonDockExtensions"
                     mc:Ignorable="d">
@@ -74,8 +75,8 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
 
@@ -113,7 +114,7 @@
                            Text="(.*)" />
             </ToggleButton>
             <TextBox Grid.Row="0"
-                     Grid.Column="2"
+                     Grid.Column="3"
                      Text="{Binding TextToSearch,
                                         UpdateSourceTrigger=PropertyChanged,
                                         NotifyOnValidationError=True,
@@ -144,6 +145,182 @@
                     </Style>
                 </TextBox.Style>
             </TextBox>
+            <ToggleButton x:Name="SavedSearchToggleButton"
+                          Grid.Row="0"
+                          Grid.Column="2"
+                          Margin="0,0,2,0"
+                          HorizontalContentAlignment="Center"
+                          VerticalContentAlignment="Center"
+                          BorderThickness="0"
+                          IsTabStop="False"
+                          Style="{StaticResource SearchOptionToggleButtonStyle}"
+                          ToolTip="Saved searches">
+                <Rectangle Width="14"
+                           Height="14"
+                           Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton},
+                                                  Path=Foreground}">
+                    <Rectangle.OpacityMask>
+                        <VisualBrush Stretch="Fill" Visual="{StaticResource appbar_star}" />
+                    </Rectangle.OpacityMask>
+                </Rectangle>
+            </ToggleButton>
+            <Popup Grid.Row="0"
+                   Grid.Column="2"
+                   AllowsTransparency="True"
+                   Placement="Bottom"
+                   StaysOpen="False"
+                   filterPopup:BindPopupBehavior.ToToggleButton="{Binding ElementName=SavedSearchToggleButton}">
+                <Border Width="320"
+                        MaxHeight="360"
+                        Background="White"
+                        BorderBrush="LightGray"
+                        BorderThickness="1">
+                    <Grid Margin="6">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBox Grid.Row="0"
+                                 Margin="0,0,0,4"
+                                 Text="{Binding SavedSearchFilter,
+                                                UpdateSourceTrigger=PropertyChanged}"
+                                 mahapps:TextBoxHelper.ClearTextButton="True"
+                                 mahapps:TextBoxHelper.Watermark="Filter saved searches..." />
+                        <ListBox Grid.Row="1"
+                                 MinHeight="80"
+                                 HorizontalContentAlignment="Stretch"
+                                 ItemContainerStyle="{StaticResource MahApps.Styles.ListBoxItem}"
+                                 ItemsSource="{Binding SavedSearches}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type search:SavedSearchPattern}">
+                                    <Grid>
+                                        <Grid>
+                                            <Grid.Style>
+                                                <Style TargetType="{x:Type Grid}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Grid.Style>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    HorizontalContentAlignment="Left"
+                                                    Command="{Binding DataContext.ApplySavedSearchCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MahApps.Styles.Button.Chromeless}">
+                                                <StackPanel>
+                                                    <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                                                    <TextBlock FontStyle="Italic"
+                                                               Foreground="Gray"
+                                                               Text="{Binding Pattern}" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Grid.Column="1"
+                                                    Command="{Binding DataContext.BeginEditSavedSearchCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MahApps.Styles.Button.Chromeless}"
+                                                    ToolTip="Edit">
+                                                <Rectangle Width="12"
+                                                           Height="12"
+                                                           Fill="Gray">
+                                                    <Rectangle.OpacityMask>
+                                                        <VisualBrush Stretch="Fill" Visual="{StaticResource appbar_edit}" />
+                                                    </Rectangle.OpacityMask>
+                                                </Rectangle>
+                                            </Button>
+                                            <Button Grid.Column="2"
+                                                    Margin="4,0,4,0"
+                                                    Command="{Binding DataContext.DeleteSavedSearchCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MahApps.Styles.Button.Chromeless}"
+                                                    ToolTip="Delete">
+                                                <Rectangle Width="12"
+                                                           Height="12"
+                                                           Fill="Gray">
+                                                    <Rectangle.OpacityMask>
+                                                        <VisualBrush Stretch="Fill" Visual="{StaticResource appbar_delete}" />
+                                                    </Rectangle.OpacityMask>
+                                                </Rectangle>
+                                            </Button>
+                                        </Grid>
+                                        <Grid Visibility="{Binding IsEditing,
+                                                                   Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Margin="2,0,0,0">
+                                                <TextBox Text="{Binding EditName,
+                                                                        UpdateSourceTrigger=PropertyChanged}"
+                                                         mahapps:TextBoxHelper.Watermark="Name" />
+                                                <TextBox Margin="0,2,0,0"
+                                                         Text="{Binding EditPattern,
+                                                                        UpdateSourceTrigger=PropertyChanged}"
+                                                         mahapps:TextBoxHelper.Watermark="Pattern" />
+                                            </StackPanel>
+                                            <Button Grid.Column="1"
+                                                    Command="{Binding DataContext.CommitEditSavedSearchCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MahApps.Styles.Button.Chromeless}"
+                                                    ToolTip="Save">
+                                                <Rectangle Width="12"
+                                                           Height="12"
+                                                           Fill="Gray">
+                                                    <Rectangle.OpacityMask>
+                                                        <VisualBrush Stretch="Fill" Visual="{StaticResource appbar_check}" />
+                                                    </Rectangle.OpacityMask>
+                                                </Rectangle>
+                                            </Button>
+                                            <Button Grid.Column="2"
+                                                    Margin="4,0,4,0"
+                                                    Command="{Binding DataContext.CancelEditSavedSearchCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MahApps.Styles.Button.Chromeless}"
+                                                    ToolTip="Cancel">
+                                                <Rectangle Width="12"
+                                                           Height="12"
+                                                           Fill="Gray">
+                                                    <Rectangle.OpacityMask>
+                                                        <VisualBrush Stretch="Fill" Visual="{StaticResource appbar_close}" />
+                                                    </Rectangle.OpacityMask>
+                                                </Rectangle>
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Grid Grid.Row="2" Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0"
+                                     Margin="0,0,4,0"
+                                     Text="{Binding NewSearchName,
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                     mahapps:TextBoxHelper.Watermark="Name for current search" />
+                            <Button Grid.Column="1"
+                                    Command="{Binding SaveSearchCommand}"
+                                    Content="Save" />
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Popup>
         </Grid>
     </DataTemplate>
 

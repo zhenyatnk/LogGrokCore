@@ -20,6 +20,7 @@ namespace LogGrokCore
         private DocumentViewModel? _currentDocument;
         private readonly ApplicationSettings _applicationSettings;
         private readonly SearchAutocompleteCache _searchAutocompleteCache;
+        private readonly SavedSearchPatternStore _savedSearchPatternStore;
 
         public ObservableCollection<DocumentViewModel> Documents { get; }
 
@@ -38,10 +39,12 @@ namespace LogGrokCore
 
         public MainWindowViewModel(ApplicationSettings applicationSettings, 
             SearchAutocompleteCache searchAutocompleteCache, 
+            SavedSearchPatternStore savedSearchPatternStore,
             Func<ObservableCollection<DocumentViewModel>, MarkedLinesViewModel> markedLinesViewModelFactory)
         {
             _applicationSettings = applicationSettings;
             _searchAutocompleteCache = searchAutocompleteCache;
+            _savedSearchPatternStore = savedSearchPatternStore;
             Documents = new ObservableCollection<DocumentViewModel>();
             MarkedLinesViewModel = markedLinesViewModelFactory(Documents);
             OpenSettings = new DelegateCommand(() =>
@@ -149,7 +152,7 @@ namespace LogGrokCore
 
         private DocumentViewModel CreateDocument(string fileName)
         {
-            var container = new DocumentContainer(fileName, _applicationSettings, _searchAutocompleteCache);
+            var container = new DocumentContainer(fileName, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore);
             var viewModel = container.GetDocumentViewModel();
             Documents.Add(viewModel);
             Documents.CollectionChanged += (o, e) =>
