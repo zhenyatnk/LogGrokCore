@@ -1,5 +1,6 @@
 ﻿using System;
 using LogGrokCore.Controls;
+using LogGrokCore.Controls.TextRender;
 using LogGrokCore.MarkedLines;
 
 namespace LogGrokCore
@@ -19,6 +20,9 @@ namespace LogGrokCore
         public int Index { get; }
 
         public LinePartViewModel IndexViewModel { get; }
+
+        public virtual string GetDisplayText(TextViewSharedFoldingState? foldingState) =>
+            ToString() ?? string.Empty;
         
         public bool IsMarked
         {

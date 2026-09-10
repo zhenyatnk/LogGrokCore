@@ -1,5 +1,7 @@
 using System;
+using System.Text;
 using LogGrokCore.Controls;
+using LogGrokCore.Controls.TextRender;
 using LogGrokCore.Data;
 
 namespace LogGrokCore
@@ -48,6 +50,45 @@ namespace LogGrokCore
         public override string ToString()
         {
             return _transformResult.TrimEnd();
+        }
+
+        public override string GetDisplayText(TextViewSharedFoldingState? foldingState)
+        {
+            var lineMeta = _parseResult.Get().ParsedLineComponents;
+            var componentCount = _parseResult.ComponentCount;
+            var builder = new StringBuilder();
+            var offset = 0;
+
+            for (var i = 0; i < componentCount; i++)
+            {
+                var start = lineMeta.ComponentStart(i);
+                var length = lineMeta.ComponentLength(i);
+
+                if (start < offset || start + length > _transformResult.Length)
+                    continue;
+
+                builder.Append(_transformResult, offset, start - offset);
+                var componentText = _transformResult.Substring(start, length);
+                builder.Append(GetComponentDisplayText(i, componentText, foldingState));
+                offset = start + length;
+            }
+
+            builder.Append(_transformResult, offset, _transformResult.Length - offset);
+            return builder.ToString().TrimEnd();
+        }
+
+        private string GetComponentDisplayText(int componentIndex, string componentText,
+            TextViewSharedFoldingState? foldingState)
+        {
+            var textModel = new TextModel(HashCode.Combine(Index, componentIndex), componentText);
+
+            if (foldingState == null || textModel.CollapsibleRanges == null)
+                return textModel.GetDisplayedText(null);
+
+            var collapsedLines = foldingState[textModel.UniqueId]
+                                 ?? foldingState.GetDefaultSettings(textModel.CollapsibleRanges, textModel.Count);
+
+            return textModel.GetDisplayedText(collapsedLines);
         }
     }
 }

@@ -256,22 +256,30 @@ public class TextView : Control, IClippingRectChangesAware
             FrameworkPropertyMetadataOptions.AffectsRender,
             static (d, _) => (d as TextView)?._textControl.InvalidateVisual()));
         
-        CommandManager.RegisterClassCommandBinding(typeof(TextView),
-            new CommandBinding(
-                RoutedCommands.CopyToClipboard,
-                (sender, args) =>
-                {
-                    var text = ((TextView)sender).SelectedText;
-                    TextCopy.ClipboardService.SetText(text);
-                    args.Handled = true;
-                },
-                (sender, args) =>
-                {
-                    if (sender is not TextView selectableTextBlock) return;
-                    var haveSelectedText = !string.IsNullOrEmpty(selectableTextBlock.SelectedText);
-                    args.CanExecute = haveSelectedText;
-                    args.Handled = haveSelectedText;
-                }));
+        void CopySelectedTextHandler(object sender, ExecutedRoutedEventArgs args)
+        {
+            var text = ((TextView)sender).SelectedText;
+            TextCopy.ClipboardService.SetText(text);
+            args.Handled = true;
+        }
+
+        void CanCopySelectedTextHandler(object sender, CanExecuteRoutedEventArgs args)
+        {
+            if (sender is not TextView selectableTextBlock) return;
+            var haveSelectedText = !string.IsNullOrEmpty(selectableTextBlock.SelectedText);
+            args.CanExecute = haveSelectedText;
+            args.Handled = haveSelectedText;
+        }
+
+        foreach (var command in new RoutedCommand[]
+                 {
+                     RoutedCommands.CopyToClipboard,
+                     RoutedCommands.CopyAsDisplayed
+                 })
+        {
+            CommandManager.RegisterClassCommandBinding(typeof(TextView),
+                new CommandBinding(command, CopySelectedTextHandler, CanCopySelectedTextHandler));
+        }
     }
 
     protected override int VisualChildrenCount => _children?.Count ?? 0;

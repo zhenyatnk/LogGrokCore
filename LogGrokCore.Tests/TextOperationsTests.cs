@@ -65,5 +65,22 @@ namespace LogGrokCore.Tests
             Assert.AreEqual("Hello\r\nworld\r\n", resultString);
             Assert.AreEqual(1, linesTrimmed);
         }
+
+        [TestMethod]
+        public void FormatInlineJsonAlignsJson()
+        {
+            var result = TextOperations.FormatInlineJson("prefix {\"a\":1,\"b\":[1,2]} suffix");
+
+            StringAssert.Contains(result, "\"a\": 1");
+            StringAssert.Contains(result, "\"b\": [");
         }
+
+        [TestMethod]
+        public void FormatInlineJsonLeavesNonJsonUntouched()
+        {
+            const string source = "no json here";
+
+            Assert.AreEqual(source, TextOperations.FormatInlineJson(source));
+        }
+    }
 }

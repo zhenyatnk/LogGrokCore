@@ -14,6 +14,8 @@ namespace LogGrokCore.Data
             _componentCount = componentCount;
         }
 
+        public int ComponentCount => _componentCount;
+
         public LineMetaInformation Get()
         {
             return new(_metaPlaceHolder.AsSpan(), _componentCount);
