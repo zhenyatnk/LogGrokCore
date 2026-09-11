@@ -12,6 +12,10 @@ namespace LogGrokCore.Controls.ListControls.VirtualizingStackPanel
 {
     public partial class VirtualizingStackPanel : VirtualizingPanel, IScrollInfo
     {
+        public static readonly DependencyProperty FirstVisibleIndexProperty = DependencyProperty.Register(
+            "FirstVisibleIndex", typeof(int), typeof(VirtualizingStackPanel),
+            new FrameworkPropertyMetadata(-1, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
         private List<VisibleItem> _visibleItems = new();
         private readonly Stack<ListViewItem> _recycled = new();
 
@@ -88,6 +92,12 @@ namespace LogGrokCore.Controls.ListControls.VirtualizingStackPanel
         
         public double VisibleItemsMaxWidth { get; private set; }
         public bool IsViewportIsCompletelyFilled { get; private set; }
+
+        public int FirstVisibleIndex
+        {
+            get => (int)GetValue(FirstVisibleIndexProperty);
+            set => SetValue(FirstVisibleIndexProperty, value);
+        }
       
         protected override Size ArrangeOverride(Size finalSize)
         {
@@ -125,7 +135,13 @@ namespace LogGrokCore.Controls.ListControls.VirtualizingStackPanel
         {
             var firstVisibleItemIndex = (int) Math.Floor(verticalOffset);
             var startOffset = firstVisibleItemIndex - verticalOffset;
-            
+
+            var resolvedFirstVisibleIndex = Items.Count == 0
+                ? -1
+                : Math.Clamp(firstVisibleItemIndex, 0, Items.Count - 1);
+            if (FirstVisibleIndex != resolvedFirstVisibleIndex)
+                FirstVisibleIndex = resolvedFirstVisibleIndex;
+
             if (InternalChildren.Count == 0)
                 _visibleItems.Clear();
             

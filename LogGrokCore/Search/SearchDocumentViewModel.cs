@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
@@ -19,8 +20,11 @@ namespace LogGrokCore.Search
 {
     public class SearchDocumentViewModel : ViewModelBase, IDisposable
     {
+        public const int MatchBucketCount = 1000;
+
         private readonly GridViewFactory _viewFactory;
         private SearchPattern _searchPattern;
+        private bool[] _matchBuckets = Array.Empty<bool>();
         
         public Action<int>? NavigateToIndexRequested;
         private  bool _isIndeterminateProgress;
@@ -35,6 +39,7 @@ namespace LogGrokCore.Search
         private SubIndexer? _currentSearchIndexer;
         private int? _currentItemIndex;
         private readonly LogModelFacade _logModelFacade;
+        private readonly TimeIndex _timeIndex;
         private SearchLineIndex? _currentSearchLineIndex;
         private readonly Selection _markedLines;
         private readonly TransformationPerformer _transformationPerformer;
@@ -45,15 +50,19 @@ namespace LogGrokCore.Search
             SearchPattern searchPattern,
             Selection markedLines,
             ColumnSettings columnSettings,
-            TransformationPerformer transformationPerformer)
+            TransformationPerformer transformationPerformer,
+            TimeIndex timeIndex)
         {
             
             _viewFactory = viewFactory;
 
             _logModelFacade = logModelFacade;
+            _timeIndex = timeIndex;
 
             _filterSettings = filterSettings;
             _filterSettings.ExclusionsChanged += UpdateLines;
+            _filterSettings.TimeRangeChanged += StartSearch;
+            _filterSettings.LineRangeChanged += StartSearch;
 
             _markedLines = markedLines;
             _transformationPerformer = transformationPerformer;
@@ -67,8 +76,86 @@ namespace LogGrokCore.Search
                     if (param is not BaseLogLineViewModel itemViewModel)
                         return;
 
+                    var resultIndex = _currentSearchLineIndex?.GetIndexByOriginalIndex(itemViewModel.Index) ?? -1;
+                    if (resultIndex >= 0 && resultIndex < Lines.Count
+                        && ReferenceEquals(Lines[resultIndex], itemViewModel))
+                        CurrentItemIndex = resultIndex;
+
                     NavigateToIndexRequested?.Invoke(itemViewModel.Index);
                 });
+        }
+
+        public event Action? MatchPositionChanged;
+
+        public bool[] MatchBuckets
+        {
+            get => _matchBuckets;
+            private set
+            {
+                _matchBuckets = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public string MatchCounterText
+        {
+            get
+            {
+                var count = Lines.Count;
+                if (count == 0)
+                    return string.Empty;
+
+                return CurrentItemIndex is { } current
+                    ? $"{current + 1} of {count}"
+                    : $"{count} matches";
+            }
+        }
+
+        public void FindNext() => MoveMatch(1, -1);
+
+        public void FindPrevious() => MoveMatch(-1, -1);
+
+        public void FindNext(int anchorOriginalLine) => MoveMatch(1, anchorOriginalLine);
+
+        public void FindPrevious(int anchorOriginalLine) => MoveMatch(-1, anchorOriginalLine);
+
+        private void MoveMatch(int direction, int anchorOriginalLine)
+        {
+            var count = Lines.Count;
+            if (count == 0)
+                return;
+
+            if (anchorOriginalLine >= 0 && _currentSearchLineIndex != null)
+            {
+                var index = direction > 0
+                    ? _currentSearchLineIndex.GetIndexByOriginalIndex(anchorOriginalLine + 1)
+                    : _currentSearchLineIndex.GetIndexByOriginalIndex(anchorOriginalLine) - 1;
+
+                if (index < 0) index = count - 1;
+                if (index >= count) index = 0;
+
+                SelectMatch(index);
+                return;
+            }
+
+            var current = CurrentItemIndex ?? (direction > 0 ? -1 : 0);
+            var next = current + direction;
+            if (next >= count) next = 0;
+            if (next < 0) next = count - 1;
+
+            SelectMatch(next);
+        }
+
+        private void SelectMatch(int resultIndex)
+        {
+            if (resultIndex < 0 || resultIndex >= Lines.Count)
+                return;
+
+            CurrentItemIndex = resultIndex;
+            NavigateToLineRequest.Raise(resultIndex);
+
+            if (Lines[resultIndex] is LineViewModel lineViewModel)
+                NavigateToIndexRequested?.Invoke(lineViewModel.Index);
         }
 
         public ColumnSettings ColumnSettings { get; }
@@ -121,7 +208,28 @@ namespace LogGrokCore.Search
         public int? CurrentItemIndex
         {
             get => _currentItemIndex;
-            set => SetAndRaiseIfChanged(ref _currentItemIndex, value < 0 ? null : value);
+            set
+            {
+                var normalized = value < 0 ? null : value;
+                if (_currentItemIndex == normalized) return;
+
+                _currentItemIndex = normalized;
+                InvokePropertyChanged();
+                InvokePropertyChanged(nameof(MatchCounterText));
+                InvokePropertyChanged(nameof(CurrentMatchLine));
+                MatchPositionChanged?.Invoke();
+            }
+        }
+
+        public int CurrentMatchLine
+        {
+            get
+            {
+                if (CurrentItemIndex is not { } index || index < 0 || index >= Lines.Count)
+                    return -1;
+
+                return Lines[index] is LineViewModel line ? line.Index : -1;
+            }
         }
 
         public ICommand ItemActivatedCommand
@@ -132,6 +240,10 @@ namespace LogGrokCore.Search
         
         public void Dispose()
         {
+            _filterSettings.ExclusionsChanged -= UpdateLines;
+            _filterSettings.TimeRangeChanged -= StartSearch;
+            _filterSettings.LineRangeChanged -= StartSearch;
+
             lock (_cancellationTokenSourceLock)
             {
                 _currentSearchCancellationTokenSource?.Cancel();
@@ -156,10 +268,17 @@ namespace LogGrokCore.Search
             IsIndeterminateProgress = true;
             CurrentItemIndex = null;
             
+            (int StartLine, int EndLine)? lineRange = null;
+            if (_filterSettings.TimeRange is { } timeRange)
+                lineRange = _timeIndex.FindLineRange(timeRange.From, timeRange.To);
+            else if (_filterSettings.LineRange is { } fallbackLineRange)
+                lineRange = fallbackLineRange;
+
             var (progress, searchIndexer, searchLineIndex) = Data.Search.Search.CreateSearchIndex(
                 _logModelFacade,
                 _searchPattern.GetRegex(RegexOptions.Compiled),
-                newCancellationTokenSource.Token);
+                newCancellationTokenSource.Token,
+                lineRange);
 
             _currentSearchIndexer = searchIndexer;
             _currentSearchLineIndex = searchLineIndex;
@@ -245,7 +364,10 @@ namespace LogGrokCore.Search
                     var count = Lines?.Count;
                     Lines?.UpdateCount();
                     if (count != Lines?.Count)
+                    {
                         InvokePropertyChanged(nameof(Title));
+                        InvokePropertyChanged(nameof(MatchCounterText));
+                    }
 
                     IsIndeterminateProgress = false;
                     SearchProgress = progress.Value * 100.0;
@@ -263,7 +385,9 @@ namespace LogGrokCore.Search
                 Lines?.UpdateCount();
                 SearchProgress = progress.Value * 100.0;
                 SetIsSearching(false);
+                MatchBuckets = BuildBuckets();
                 InvokePropertyChanged(nameof(Title));
+                InvokePropertyChanged(nameof(MatchCounterText));
             }
             catch (OperationCanceledException)
             {
@@ -286,6 +410,9 @@ namespace LogGrokCore.Search
                 _currentSearchIndexer, _currentSearchLineIndex, _filterSettings.Exclusions);
             
             Lines.Reset(new List<ItemViewModel>(), foundLines);
+            MatchBuckets = BuildBuckets();
+            InvokePropertyChanged(nameof(MatchCounterText));
+            InvokePropertyChanged(nameof(CurrentMatchLine));
 
             if (originalLineIndex is not { } index) return;
             
@@ -294,6 +421,46 @@ namespace LogGrokCore.Search
                 CurrentItemIndex = null;
             else
                 NavigateToLineRequest.Raise(_currentSearchLineIndex.GetIndexByOriginalIndex(index));
+        }
+
+        private bool[] BuildBuckets()
+        {
+            var buckets = new bool[MatchBucketCount];
+            var totalLines = _logModelFacade.LineCount;
+            if (_currentSearchIndexer == null || _currentSearchLineIndex == null
+                || totalLines <= 0 || _currentSearchLineIndex.Count == 0)
+                return buckets;
+
+            var filteredSearchResults =
+                _currentSearchIndexer.GetIndexedLinesProvider(_filterSettings.Exclusions);
+            var originalLineNumbers = new ItemProviderMapper<int>(filteredSearchResults, _currentSearchLineIndex);
+            var matchCount = originalLineNumbers.Count;
+            if (matchCount == 0)
+                return buckets;
+
+            const int chunkSize = 8192;
+            var buffer = ArrayPool<int>.Shared.Rent(Math.Min(chunkSize, matchCount));
+            try
+            {
+                for (var start = 0; start < matchCount; start += chunkSize)
+                {
+                    var count = Math.Min(chunkSize, matchCount - start);
+                    originalLineNumbers.Fetch(start, buffer.AsSpan(0, count));
+                    for (var i = 0; i < count; i++)
+                    {
+                        var bucket = (int)((long)buffer[i] * MatchBucketCount / totalLines);
+                        if (bucket < 0) bucket = 0;
+                        if (bucket >= MatchBucketCount) bucket = MatchBucketCount - 1;
+                        buckets[bucket] = true;
+                    }
+                }
+            }
+            finally
+            {
+                ArrayPool<int>.Shared.Return(buffer);
+            }
+
+            return buckets;
         }
     }
 }

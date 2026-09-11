@@ -6,7 +6,6 @@
                     xmlns:gridView="clr-namespace:LogGrokCore.Controls.GridView">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/themes/light.blue.xaml" />
     </ResourceDictionary.MergedDictionaries>
     <controls:ObjectToTypeConverter x:Key="ObjectToTypeConverter" />
     
@@ -60,25 +59,30 @@
                 <Setter Property="Template" Value="{StaticResource LogHeaderControlTemplate}" />
             </DataTrigger>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{StaticResource MahApps.Brushes.Accent3}" />
-                <Setter Property="BorderBrush" Value="{StaticResource MahApps.Brushes.Accent2}" />
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent3}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Accent2}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsMouseOver" Value="True" />
                     <Condition Property="IsSelected" Value="False" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{StaticResource MahApps.Brushes.Accent4}" />
-                <Setter Property="BorderBrush" Value="{StaticResource MahApps.Brushes.Highlight}" />
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent4}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Highlight}" />
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsMouseOver" Value="True" />
                     <Condition Property="IsSelected" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{StaticResource MahApps.Brushes.Accent3}" />
-                <Setter Property="BorderBrush" Value="{StaticResource MahApps.Brushes.Highlight}" />
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent3}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Highlight}" />
             </MultiTrigger>
+            <DataTrigger Binding="{Binding DataContext.IsDarkTheme,
+                         RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                         Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}" />
+            </DataTrigger>
         </Style.Triggers>
     </Style>
 </ResourceDictionary>

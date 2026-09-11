@@ -118,4 +118,26 @@ public class Indexer : IndexerBase
     public event Action<(int compnentNumber, IndexKey key)>? NewComponentAdded;
 
     public IndexKeyNum GetIndexKeyNum(int index) => _lineAndKeyIndex[index];
+
+    public bool IsLineIncluded(int lineNumber, IReadOnlyDictionary<int, IEnumerable<string>> excludedComponents)
+    {
+        if (excludedComponents.Count == 0)
+            return true;
+
+        if (lineNumber < 0 || lineNumber >= _lineAndKeyIndex.Count)
+            return true;
+
+        var key = NumbersToKeys[_lineAndKeyIndex[lineNumber]];
+        foreach (var (componentIndex, componentValues) in excludedComponents)
+        {
+            var keyComponent = key.GetComponent(componentIndex);
+            foreach (var componentValue in componentValues)
+            {
+                if (keyComponent.SequenceEqual(componentValue))
+                    return false;
+            }
+        }
+
+        return true;
+    }
 }

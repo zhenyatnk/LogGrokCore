@@ -18,6 +18,10 @@ namespace LogGrokCore.Controls.ListControls.VirtualizingStackPanel
         public static readonly DependencyProperty IsCurrentItemProperty = DependencyProperty.RegisterAttached(
             "IsCurrentItem", typeof(bool), typeof(VirtualizingStackPanel), new PropertyMetadata(default(bool)));
 
+        public static readonly DependencyProperty ReplaceSelectionOnCurrentPositionProperty = DependencyProperty.Register(
+            "ReplaceSelectionOnCurrentPosition", typeof(bool), typeof(VirtualizingStackPanel),
+            new PropertyMetadata(false));
+
         public static void SetIsCurrentItem(ListBoxItem listViewItem, bool value)
         {
             listViewItem.SetValue(IsCurrentItemProperty, value);
@@ -32,7 +36,15 @@ namespace LogGrokCore.Controls.ListControls.VirtualizingStackPanel
         {
             var panel = (VirtualizingStackPanel) d;
             var newValue = (int) e.NewValue;
-            panel._selection.Add(newValue);
+            var itemCount = panel.ListView.Items.Count;
+            if (newValue >= itemCount)
+                newValue = itemCount - 1;
+            if (newValue < 0)
+                panel._selection.Clear();
+            else if (panel.ReplaceSelectionOnCurrentPosition)
+                panel._selection.Set(newValue);
+            else
+                panel._selection.Add(newValue);
             panel.UpdateSelection();
             foreach (var visibleItem in panel._visibleItems)
             {
@@ -45,6 +57,12 @@ namespace LogGrokCore.Controls.ListControls.VirtualizingStackPanel
         {
             get => (int) GetValue(CurrentPositionProperty);
             set => SetValue(CurrentPositionProperty, value);
+        }
+
+        public bool ReplaceSelectionOnCurrentPosition
+        {
+            get => (bool) GetValue(ReplaceSelectionOnCurrentPositionProperty);
+            set => SetValue(ReplaceSelectionOnCurrentPositionProperty, value);
         }
         
         private readonly Selection _selection = new();

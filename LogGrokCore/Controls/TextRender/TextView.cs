@@ -253,7 +253,7 @@ public class TextView : Control, IClippingRectChangesAware
     static TextView()
     {
         ForegroundProperty.OverrideMetadata(typeof(TextView), new FrameworkPropertyMetadata(null,
-            FrameworkPropertyMetadataOptions.AffectsRender,
+            FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.Inherits,
             static (d, _) => (d as TextView)?._textControl.InvalidateVisual()));
         
         void CopySelectedTextHandler(object sender, ExecutedRoutedEventArgs args)

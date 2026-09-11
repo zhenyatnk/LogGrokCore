@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -40,6 +41,9 @@ namespace LogGrokCore
             
             SearchViewModel.CurrentLineChanged += lineNumber => NavigateTo(lineNumber);
             SearchViewModel.CurrentSearchChanged += regex => LogViewModel.HighlightRegex = regex;
+            SearchViewModel.PropertyChanged += OnSearchViewModelPropertyChanged;
+            LogViewModel.SetSearchMatches(SearchViewModel.CurrentMatchBuckets);
+            LogViewModel.SetSearchMatchLine(SearchViewModel.CurrentMatchLine);
 
             _markedLines = markedLines;
             _transformationPerformer = transformationPerformer;
@@ -53,7 +57,18 @@ namespace LogGrokCore
             CopyFilenameToClipboardCommand = new DelegateCommand(() => TextCopy.ClipboardService.SetText(Path.GetFileName(logFileFilePath)));
 
             OpenContainingFolderCommand = new DelegateCommand(() => OpenContainingFolder(logFileFilePath));
+            FindNextCommand = new DelegateCommand(() => SearchViewModel.FindNext(GetSearchAnchor()));
+            FindPreviousCommand = new DelegateCommand(() => SearchViewModel.FindPrevious(GetSearchAnchor()));
             DocumentId = logFileFilePath;
+        }
+
+        private int GetSearchAnchor()
+        {
+            var selectionLine = LogViewModel.CurrentOriginalLine;
+            if (selectionLine >= 0)
+                return selectionLine;
+
+            return SearchViewModel.CurrentMatchLine;
         }
 
         public string DocumentId { get; }
@@ -66,9 +81,22 @@ namespace LogGrokCore
 
         public ICommand OpenContainingFolderCommand { get; }
 
+        public ICommand FindNextCommand { get; }
+
+        public ICommand FindPreviousCommand { get; }
+
         public void NavigateTo(int lineNumber)
         {
             LogViewModel.NavigateTo(lineNumber);
+        }
+
+        private void OnSearchViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SearchViewModel.CurrentMatchBuckets))
+                LogViewModel.SetSearchMatches(SearchViewModel.CurrentMatchBuckets);
+
+            if (e.PropertyName == nameof(SearchViewModel.CurrentMatchLine))
+                LogViewModel.SetSearchMatchLine(SearchViewModel.CurrentMatchLine);
         }
         
         public ObservableCollection<(int number, string text)> MarkedLineViewModels

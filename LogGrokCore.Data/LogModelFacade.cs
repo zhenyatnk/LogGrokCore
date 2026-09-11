@@ -47,6 +47,8 @@ namespace LogGrokCore.Data
         
         public LogFile LogFile { get; }
 
+        public int LineCount => LineIndex.Count;
+
         public bool IsLoaded => LineIndex.IsFinished;
     }
 }

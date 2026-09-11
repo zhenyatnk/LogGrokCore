@@ -109,7 +109,7 @@ namespace LogGrokCore.Controls.ListControls
         private new static readonly DependencyProperty ForegroundProperty = 
             TextElement.ForegroundProperty.AddOwner(typeof(BaseLogListViewItem), 
                 new FrameworkPropertyMetadata(SystemColors.ControlTextBrush, 
-                    FrameworkPropertyMetadataOptions.None,
+                    FrameworkPropertyMetadataOptions.Inherits,
                     (_, _) => { },
                     CoerceForegroundProperty));
         

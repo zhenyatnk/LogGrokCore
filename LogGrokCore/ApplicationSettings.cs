@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using LogGrokCore.Colors.Configuration;
 using LogGrokCore.Controls.ListControls;
 using LogGrokCore.Data;
@@ -33,6 +36,50 @@ namespace LogGrokCore
             }
 
             return columnSettings;
+        }
+
+        public void SetTimelineAtTop(bool isAtTop)
+        {
+            if (ViewSettings.TimelineAtTop == isAtTop)
+                return;
+
+            ViewSettings.TimelineAtTop = isAtTop;
+            SaveTimelineAtTop(isAtTop);
+        }
+
+        private static void SaveTimelineAtTop(bool isAtTop)
+        {
+            try
+            {
+                if (!File.Exists(SettingsFileName))
+                    return;
+
+                var lines = File.ReadAllLines(SettingsFileName).ToList();
+                var value = isAtTop ? "true" : "false";
+                var keyRegex = new Regex(@"^(\s*)TimelineAtTop\s*:.*$");
+                for (var i = 0; i < lines.Count; i++)
+                {
+                    var match = keyRegex.Match(lines[i]);
+                    if (!match.Success) continue;
+                    lines[i] = $"{match.Groups[1].Value}TimelineAtTop: {value}";
+                    File.WriteAllLines(SettingsFileName, lines);
+                    return;
+                }
+
+                var sectionRegex = new Regex(@"^(\s*)ViewSettings\s*:\s*$");
+                for (var i = 0; i < lines.Count; i++)
+                {
+                    var match = sectionRegex.Match(lines[i]);
+                    if (!match.Success) continue;
+                    lines.Insert(i + 1, $"{match.Groups[1].Value}  TimelineAtTop: {value}");
+                    File.WriteAllLines(SettingsFileName, lines);
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         public static ApplicationSettings Instance()

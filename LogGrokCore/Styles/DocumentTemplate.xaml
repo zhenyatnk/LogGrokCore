@@ -8,7 +8,6 @@
                     mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/themes/light.blue.xaml" />
         <ResourceDictionary Source="LogViewTemplate.xaml" />
         <ResourceDictionary Source="DocumentSearchTemplate.xaml" />
     </ResourceDictionary.MergedDictionaries>
@@ -18,6 +17,8 @@
             SearchTextCommand="{Binding SearchViewModel.SearchTextCommand}">
             <controls:RootDocumentControl.InputBindings>
                 <KeyBinding Gesture="Ctrl+F" Command="{Binding SearchViewModel.Activate}" />
+                <KeyBinding Gesture="F3" Command="{Binding FindNextCommand}" />
+                <KeyBinding Gesture="Shift+F3" Command="{Binding FindPreviousCommand}" />
             </controls:RootDocumentControl.InputBindings>
             <Grid colors:ColorSettings.ColorSettings="{Binding ColorSettings}">
             <Grid.RowDefinitions>

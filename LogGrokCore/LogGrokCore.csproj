@@ -41,6 +41,7 @@
     <PackageReference Include="Dirkster.AvalonDock" Version="5.0.0" />
     <PackageReference Include="Dirkster.AvalonDock.Serializer.Xml" Version="5.0.0" />
     <PackageReference Include="Dirkster.AvalonDock.Themes.Metro" Version="5.0.0" />
+    <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="5.0.0" />
     <PackageReference Include="GitInfo" Version="3.6.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

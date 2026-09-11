@@ -54,7 +54,8 @@ public static class DocumentContextMenu
 
             foreach (var item in newItems.Except(oldItems))
             {
-                contextMenuItems.Add(item);
+                if (!contextMenuItems.Contains(item))
+                    contextMenuItems.Add(item);
             }
         }
 
@@ -65,16 +66,30 @@ public static class DocumentContextMenu
         }
         else
         {
+            ContextMenu? previousContextMenu = null;
             var descriptor =
                 DependencyPropertyDescriptor.FromProperty(
                     DockingManager.DocumentContextMenuProperty, typeof(DockingManager));
             descriptor.AddValueChanged(dockingManager, (o, e) =>
             {
                 ContextMenu? contextMenu = dockingManager.DocumentContextMenu;
-                if (contextMenu != null)
+                if (contextMenu == null)
+                    return;
+
+                if (!ReferenceEquals(previousContextMenu, contextMenu))
                 {
-                    UpdateContextMenu(contextMenu);
+                    if (previousContextMenu != null)
+                    {
+                        foreach (var item in newItems.Where(previousContextMenu.Items.Contains).ToList())
+                        {
+                            previousContextMenu.Items.Remove(item);
+                        }
+                    }
+
+                    previousContextMenu = contextMenu;
                 }
+
+                UpdateContextMenu(contextMenu);
             });
         }
     }

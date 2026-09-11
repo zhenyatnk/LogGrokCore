@@ -6,7 +6,6 @@
                      xmlns:localControls="clr-namespace:LogGrokCore.Controls"
                      xmlns:local="clr-namespace:LogGrokCore"
                      xmlns:mahapps="http://metro.mahapps.com/winfx/xaml/controls"
-                     xmlns:th="clr-namespace:AvalonDock.Themes;assembly=AvalonDock.Themes.Metro"
                      xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
                      xmlns:avalonDockExtensions="clr-namespace:LogGrokCore.AvalonDockExtensions"
                      d:DataContext="{d:DesignInstance Type=local:MainWindowViewModel, IsDesignTimeCreatable=False}"
@@ -25,7 +24,6 @@
                 <ResourceDictionary Source="Styles/MarkedLinesViewTemplate.xaml" />
                 <ResourceDictionary Source="Styles/ListViewItemStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <th:MetroTheme x:Key="MetroTheme" />
             <localControls:StringShortenerConvereter x:Key="StringShortenerConverter" />
             <avalonDockExtensions:MenuItemCollection x:Key="AdditionalDocumentMenuItems">
                 <MenuItem Header="Copy Filename" Command="{Binding Model.Content.CopyFilenameToClipboardCommand}" />
@@ -44,6 +42,10 @@
                         </DataTemplate>
                     </MenuItem.HeaderTemplate>
                     <MenuItem Command="{Binding OpenFileCommand}" Header="Open" />
+                    <MenuItem Command="{Binding ToggleThemeCommand}" Header="Toggle theme" />
+                    <MenuItem Header="Timeline at top"
+                              IsCheckable="True"
+                              IsChecked="{Binding IsTimelineAtTop, Mode=TwoWay}" />
                     <Separator />
                     <MenuItem Command="{Binding ExitCommand}" Header="Exit" />
                 </MenuItem>
@@ -52,6 +54,16 @@
     </mahapps:MetroWindow.LeftWindowCommands>
     <mahapps:MetroWindow.RightWindowCommands>
         <mahapps:WindowCommands>
+            <Button Command="{Binding ToggleThemeCommand}" ToolTip="Toggle light / dark theme">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Width="20"
+                                                Height="20"
+                                                Kind="ThemeLightDark" />
+                    <TextBlock Margin="4 0 0 0"
+                               VerticalAlignment="Center"
+                               Text="theme" />
+                </StackPanel>
+            </Button>
             <Button Command="{Binding OpenSettings}">
                 <StackPanel Orientation="Horizontal">
                     <Rectangle Width="20"
@@ -76,7 +88,7 @@
     </mahapps:MetroWindow.InputBindings>
     <Grid>
         <DockingManager
-            x:Name="DockingManager" Theme="{StaticResource MetroTheme}"
+            x:Name="DockingManager" Theme="{Binding DockTheme}"
                                   GridSplitterWidth="10"
                                   GridSplitterHeight="10"
                                   avalonDockExtensions:BindingBehavior.CurrentDocument="{Binding CurrentDocument}"

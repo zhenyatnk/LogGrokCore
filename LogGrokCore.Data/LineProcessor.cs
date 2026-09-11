@@ -18,17 +18,20 @@ namespace LogGrokCore.Data
         private readonly ILineParser _parser;
         private readonly int _componentCount;
         private readonly ParsedBufferConsumer _parsedBufferConsumer;
+        private readonly TimeIndex _timeIndex;
 
         public LineProcessor(LogFile logFile,
             LogMetaInformation metaInformation,
             ILineParser parser,
             ParsedBufferConsumer parsedBufferConsumer,
-            StringPool stringPool)
+            StringPool stringPool,
+            TimeIndex timeIndex)
         {
             _encoding = logFile.Encoding;
             _componentCount = metaInformation.IndexedFieldNumbers.Length;
             _parsedBufferConsumer = parsedBufferConsumer;
             _stringPool = stringPool;
+            _timeIndex = timeIndex;
 
             _parser = parser;
         }
@@ -71,11 +74,12 @@ namespace LogGrokCore.Data
                     LineMetaInformation.Get(stringPointer, _componentCount);
                 
                 if (_parser.TryParse(_currentString, stringFrom, stringLength,
-                    lineMetaInformation.ParsedLineComponents))
+                    lineMetaInformation.ParsedLineComponents, out var timeTicks))
                 {
                     lineMetaInformation.LineOffsetFromBufferStart = (int)(lineOffset - _bufferOffset);
                     _currentOffset += lineMetaInformation.TotalSizeWithPayloadCharsAligned;
                     _currentBufferLineCount++;
+                    _timeIndex.Add(timeTicks);
                     return;
                 }
 

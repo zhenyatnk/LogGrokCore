@@ -16,6 +16,7 @@ public class Pipeline
 {
     private readonly Regex _regex;
     private readonly LogModelFacade _logModelFacade;
+    private readonly (int StartLine, int EndLine)? _lineRange;
     private const int MaxSearchSizeLines = 1024;
     private readonly int _searchWorkersCount = Math.Max(Environment.ProcessorCount - 1, 1);
     private readonly StringPool _stringPool = new();
@@ -23,10 +24,12 @@ public class Pipeline
     private uint? _id;
     
     public Pipeline(Regex regex,
-        LogModelFacade logModelFacade)
+        LogModelFacade logModelFacade,
+        (int StartLine, int EndLine)? lineRange = null)
     {
         _regex = regex;
         _logModelFacade = logModelFacade;
+        _lineRange = lineRange;
     }
 
     private void Trace(string message)
@@ -120,10 +123,20 @@ public class Pipeline
         await foreach (var (start, count) in
                        sourceLineIndex.FetchRanges(cancellationToken))
         {
-            var current = start;
-            while (current < start + count && !cancellationToken.IsCancellationRequested)
+            var segmentStart = start;
+            var segmentEnd = start + count;
+            if (_lineRange is { } lineRange)
             {
-                var end = Math.Min(current + MaxSearchSizeLines, start + count) - 1;
+                segmentStart = Math.Max(segmentStart, lineRange.StartLine);
+                segmentEnd = Math.Min(segmentEnd, lineRange.EndLine);
+                if (segmentStart >= segmentEnd)
+                    continue;
+            }
+
+            var current = segmentStart;
+            while (current < segmentEnd && !cancellationToken.IsCancellationRequested)
+            {
+                var end = Math.Min(current + MaxSearchSizeLines, segmentEnd) - 1;
                     
                 var (firstLineOffset, _) = sourceLineIndex.GetLine(current);
                 var (lastLineOffset, lastLineLength) = sourceLineIndex.GetLine(end);
