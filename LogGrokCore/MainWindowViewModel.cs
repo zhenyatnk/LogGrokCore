@@ -119,10 +119,16 @@ namespace LogGrokCore
 
         public bool IsDarkTheme => _themeService.IsDark;
 
+        private static readonly AvalonDock.Themes.MetroTheme LightDockTheme = new();
+        private static readonly AvalonDock.Themes.Vs2013DarkTheme DarkDockTheme = new();
+
+        public AvalonDock.Themes.Theme DockTheme => _themeService.IsDark ? DarkDockTheme : LightDockTheme;
+
         private void ToggleTheme()
         {
             _themeService.Toggle();
             InvokePropertyChanged(nameof(IsDarkTheme));
+            InvokePropertyChanged(nameof(DockTheme));
         }
 
         public ICommand ExitCommand => new DelegateCommand(() => Application.Current.Shutdown());

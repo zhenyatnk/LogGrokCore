@@ -6,7 +6,6 @@
                      xmlns:localControls="clr-namespace:LogGrokCore.Controls"
                      xmlns:local="clr-namespace:LogGrokCore"
                      xmlns:mahapps="http://metro.mahapps.com/winfx/xaml/controls"
-                     xmlns:th="clr-namespace:AvalonDock.Themes;assembly=AvalonDock.Themes.Metro"
                      xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
                      xmlns:avalonDockExtensions="clr-namespace:LogGrokCore.AvalonDockExtensions"
                      d:DataContext="{d:DesignInstance Type=local:MainWindowViewModel, IsDesignTimeCreatable=False}"
@@ -25,7 +24,6 @@
                 <ResourceDictionary Source="Styles/MarkedLinesViewTemplate.xaml" />
                 <ResourceDictionary Source="Styles/ListViewItemStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <th:MetroTheme x:Key="MetroTheme" />
             <localControls:StringShortenerConvereter x:Key="StringShortenerConverter" />
             <avalonDockExtensions:MenuItemCollection x:Key="AdditionalDocumentMenuItems">
                 <MenuItem Header="Copy Filename" Command="{Binding Model.Content.CopyFilenameToClipboardCommand}" />
@@ -87,7 +85,7 @@
     </mahapps:MetroWindow.InputBindings>
     <Grid>
         <DockingManager
-            x:Name="DockingManager" Theme="{StaticResource MetroTheme}"
+            x:Name="DockingManager" Theme="{Binding DockTheme}"
                                   GridSplitterWidth="10"
                                   GridSplitterHeight="10"
                                   avalonDockExtensions:BindingBehavior.CurrentDocument="{Binding CurrentDocument}"
