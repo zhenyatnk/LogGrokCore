@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Shell;
 using AvalonDock.Layout;
 using AvalonDock.Serializer.Xml;
 using LogGrokCore.AvalonDockExtensions;
@@ -44,26 +44,33 @@ namespace LogGrokCore
 
     public partial class MainWindow
     {
+        private sealed class WindowPlacement
+        {
+            public double Left { get; set; }
+            public double Top { get; set; }
+            public double Width { get; set; }
+            public double Height { get; set; }
+            public WindowState State { get; set; }
+        }
+
         public MainWindow(MainWindowViewModel mainWindowViewModel)
         {
-            var operatingSystem = Environment.OSVersion;
-            if (operatingSystem.Version.Build >= 22000) // windows 11 heuristic
-            {
-                Trace.TraceInformation("Windows 11 detected");
-                WindowChrome.SetWindowChrome(this, new WindowChrome() { CaptionHeight = 0 });
-                WindowStyle = WindowStyle.None;
-            }
-            
             DataContext = mainWindowViewModel;
-            Closing += SaveLayout;
-            Loaded += LoadLayout;
-            
+            Closing += OnClosing;
+            Loaded += OnLoaded;
+
             InitializeComponent();
         }
 
-        private void LoadLayout(object sender, RoutedEventArgs e)
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            var settingsFileName = GetSettingsFileName();
+            RestoreWindowPlacement();
+            LoadLayout();
+        }
+
+        private void LoadLayout()
+        {
+            var settingsFileName = GetLayoutFileName();
             using var reader =
                 File.Exists(settingsFileName)
                     ? new StreamReader(settingsFileName)
@@ -96,17 +103,90 @@ namespace LogGrokCore
             }
         }
 
-        private void SaveLayout(object? sender, CancelEventArgs e)
+        private void OnClosing(object? sender, CancelEventArgs e)
         {
-            var fileName = GetSettingsFileName();
+            SaveWindowPlacement();
+            SaveLayout();
+        }
+
+        private void SaveLayout()
+        {
+            var fileName = GetLayoutFileName();
             var serializer = new XmlLayoutSerializer(DockingManager);
             using var writer = new StreamWriter(fileName);
             
             serializer.Serialize(writer);
         }
-        private static string GetSettingsFileName()
+
+        private void RestoreWindowPlacement()
+        {
+            try
+            {
+                var fileName = GetWindowPlacementFileName();
+                if (!File.Exists(fileName)) return;
+
+                using var stream = File.OpenRead(fileName);
+                var placement = JsonSerializer.Deserialize<WindowPlacement>(stream);
+                if (placement == null) return;
+
+                if (placement.Width > 0) Width = placement.Width;
+                if (placement.Height > 0) Height = placement.Height;
+
+                if (IsOnAnyScreen(placement.Left, placement.Top))
+                {
+                    Left = placement.Left;
+                    Top = placement.Top;
+                    WindowStartupLocation = WindowStartupLocation.Manual;
+                }
+
+                if (placement.State == WindowState.Maximized)
+                    WindowState = WindowState.Maximized;
+            }
+            catch (Exception e)
+            {
+                Trace.TraceWarning($"Failed to restore window placement: {e.Message}");
+            }
+        }
+
+        private void SaveWindowPlacement()
+        {
+            try
+            {
+                var placement = new WindowPlacement
+                {
+                    Width = RestoreBounds.Width,
+                    Height = RestoreBounds.Height,
+                    Left = RestoreBounds.Left,
+                    Top = RestoreBounds.Top,
+                    State = WindowState
+                };
+
+                using var stream = File.Create(GetWindowPlacementFileName());
+                JsonSerializer.Serialize(stream, placement, new JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (Exception e)
+            {
+                Trace.TraceWarning($"Failed to save window placement: {e.Message}");
+            }
+        }
+
+        private static bool IsOnAnyScreen(double left, double top)
+        {
+            return !double.IsNaN(left) && !double.IsNaN(top) &&
+                   left > SystemParameters.VirtualScreenLeft - 10 &&
+                   top > SystemParameters.VirtualScreenTop - 10 &&
+                   left < SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth - 10 &&
+                   top < SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - 10;
+        }
+
+        private static string GetLayoutFileName()
         {
             return HomeDirectoryPathProvider.GetDataFileFullPath("layout.settings");
+        }
+
+        private static string GetWindowPlacementFileName()
+        {
+            return HomeDirectoryPathProvider.GetDataFileFullPath("window.settings");
         }
     }
 }

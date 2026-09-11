@@ -46,8 +46,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="MahApps.Metro" Version="2.4.11" />
-    <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="6.2.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
@@ -58,6 +56,7 @@
     <PackageReference Include="NLog.Extensions.Logging" Version="6.2.0" />
     <PackageReference Include="Splat.DryIoc" Version="21.0.0" />
     <PackageReference Include="TextCopy" Version="6.2.1" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="WPFTextBoxAutoComplete" Version="1.0.5" />
   </ItemGroup>
 

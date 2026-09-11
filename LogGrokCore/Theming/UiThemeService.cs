@@ -1,15 +1,15 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using System.Windows;
-using ControlzEx.Theming;
+using Wpf.Ui.Appearance;
+using Wpf.Ui.Controls;
 
 namespace LogGrokCore.Theming
 {
     public class UiThemeService
     {
-        public const string LightTheme = "Light.Blue";
-        public const string DarkTheme = "Dark.Blue";
+        public const string LightTheme = "Light";
+        public const string DarkTheme = "Dark";
 
         private readonly string _storeFileName =
             HomeDirectoryPathProvider.GetDataFileFullPath("Theme.json");
@@ -29,10 +29,14 @@ namespace LogGrokCore.Theming
         {
             try
             {
-                if (ThemeManager.Current.GetTheme(themeName, false) == null)
-                    themeName = LightTheme;
+                var isDark = themeName.StartsWith("Dark", StringComparison.OrdinalIgnoreCase);
+                themeName = isDark ? DarkTheme : LightTheme;
 
-                ThemeManager.Current.ChangeTheme(Application.Current, themeName, false);
+                ApplicationThemeManager.Apply(
+                    isDark ? ApplicationTheme.Dark : ApplicationTheme.Light,
+                    WindowBackdropType.Mica,
+                    true);
+
                 CurrentTheme = themeName;
                 Save();
             }

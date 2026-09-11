@@ -9,11 +9,21 @@
         <ResourceDictionary Source="LogViewContextMenu.xaml"/>
     </ResourceDictionary.MergedDictionaries>    
     <SolidColorBrush x:Key="Selection" Color="SteelBlue" Opacity="0.5"></SolidColorBrush>
+    <SolidColorBrush x:Key="SearchHighlightBrush" Color="#FFE4B5"></SolidColorBrush>
+    <SolidColorBrush x:Key="SearchHighlightDarkBrush" Color="#FF6B5300"></SolidColorBrush>
     <Style TargetType="textRender:TextView">
         <Style.Setters>
             <Setter Property="SelectionBrush" Value="{StaticResource Selection}"/>
+            <Setter Property="HighlightBrush" Value="{StaticResource SearchHighlightBrush}"/>
             <Setter Property="ContextMenu" Value="{StaticResource LogViewContextMenu}"/>
         </Style.Setters>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding DataContext.IsDarkTheme,
+                         RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                         Value="True">
+                <Setter Property="HighlightBrush" Value="{StaticResource SearchHighlightDarkBrush}"/>
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
     <DataTemplate x:Key="NormalTemplate" DataType="{x:Type logGrokCore:LinePartViewModel}">
         <textRender:TextView 

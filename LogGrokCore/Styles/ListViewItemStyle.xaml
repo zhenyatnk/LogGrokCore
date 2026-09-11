@@ -4,11 +4,16 @@
                     xmlns:controls="clr-namespace:LogGrokCore.Controls"
                     xmlns:markedLines="clr-namespace:LogGrokCore.MarkedLines"
                     xmlns:gridView="clr-namespace:LogGrokCore.Controls.GridView">
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
-    </ResourceDictionary.MergedDictionaries>
     <controls:ObjectToTypeConverter x:Key="ObjectToTypeConverter" />
-    
+
+    <SolidColorBrush x:Key="LogLineSelectionBrush"
+                     Color="{DynamicResource SystemAccentColorPrimary}"
+                     Opacity="0.35" />
+    <SolidColorBrush x:Key="LogLineSelectionBorderBrush"
+                     Color="{DynamicResource SystemAccentColorPrimary}"
+                     Opacity="0.6" />
+    <SolidColorBrush x:Key="LogLineDefaultDarkForegroundBrush" Color="#FFD2E4F4" />
+
     <ControlTemplate x:Key="LogLineControlTemplate" 
                      TargetType="{x:Type ListBoxItem}">
 
@@ -40,6 +45,7 @@
     <Style x:Key="ItemContainerStyle" TargetType="{x:Type ListViewItem}">
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch"/>
         <Style.Triggers>
@@ -59,29 +65,29 @@
                 <Setter Property="Template" Value="{StaticResource LogHeaderControlTemplate}" />
             </DataTrigger>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent3}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Accent2}" />
+                <Setter Property="Background" Value="{StaticResource LogLineSelectionBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource LogLineSelectionBorderBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsMouseOver" Value="True" />
                     <Condition Property="IsSelected" Value="False" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent4}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Highlight}" />
+                <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsMouseOver" Value="True" />
                     <Condition Property="IsSelected" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent3}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Highlight}" />
+                <Setter Property="Background" Value="{StaticResource LogLineSelectionBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource LogLineSelectionBorderBrush}" />
             </MultiTrigger>
             <DataTrigger Binding="{Binding DataContext.IsDarkTheme,
                          RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                          Value="True">
-                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}" />
+                <Setter Property="Foreground" Value="{StaticResource LogLineDefaultDarkForegroundBrush}" />
             </DataTrigger>
         </Style.Triggers>
     </Style>

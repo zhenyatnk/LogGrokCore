@@ -58,8 +58,9 @@ public class TextControl : Control
 
         if (highlightGeometries != null)
         {
-            drawingContext.DrawGeometry(Brushes.Moccasin,
-                new Pen(Brushes.Moccasin, 0),
+            var highlightBrush = _textView.HighlightBrush;
+            drawingContext.DrawGeometry(highlightBrush,
+                new Pen(highlightBrush, 0),
                 highlightGeometries);
         }
 

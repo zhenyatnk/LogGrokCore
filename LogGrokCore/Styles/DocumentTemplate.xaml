@@ -7,7 +7,6 @@
                     xmlns:colors="clr-namespace:LogGrokCore.Colors"
                     mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
         <ResourceDictionary Source="LogViewTemplate.xaml" />
         <ResourceDictionary Source="DocumentSearchTemplate.xaml" />
     </ResourceDictionary.MergedDictionaries>
@@ -35,6 +34,7 @@
                 VerticalAlignment="Top"
                 HorizontalAlignment="Stretch"
                 Height="10"
+                Background="{DynamicResource ControlStrokeColorDefaultBrush}"
                 Visibility="{Binding SearchViewModel.IsFilterEnabled,
                             Converter={StaticResource BooleanToVisibilityConverter}}" />
             

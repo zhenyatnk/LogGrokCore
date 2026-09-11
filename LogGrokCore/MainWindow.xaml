@@ -1,25 +1,28 @@
-﻿<mahapps:MetroWindow x:Class="LogGrokCore.MainWindow"
-                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                     xmlns:localControls="clr-namespace:LogGrokCore.Controls"
-                     xmlns:local="clr-namespace:LogGrokCore"
-                     xmlns:mahapps="http://metro.mahapps.com/winfx/xaml/controls"
-                     xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-                     xmlns:avalonDockExtensions="clr-namespace:LogGrokCore.AvalonDockExtensions"
-                     d:DataContext="{d:DesignInstance Type=local:MainWindowViewModel, IsDesignTimeCreatable=False}"
-                     localControls:DragnDropBehavior.AllowDrop="True"
-                     localControls:DragnDropBehavior.DropCommand="{Binding DropCommand}"
-                     SaveWindowPosition="True"
-                     MinWidth="1024"
-                     MinHeight="768"
-                     mc:Ignorable="d"
-                     Title="Loggrok 2" Height="450" Width="800">
-    <mahapps:MetroWindow.Resources>
+<ui:FluentWindow x:Class="LogGrokCore.MainWindow"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                xmlns:localControls="clr-namespace:LogGrokCore.Controls"
+                xmlns:local="clr-namespace:LogGrokCore"
+                xmlns:avalonDockExtensions="clr-namespace:LogGrokCore.AvalonDockExtensions"
+                d:DataContext="{d:DesignInstance Type=local:MainWindowViewModel, IsDesignTimeCreatable=False}"
+                localControls:DragnDropBehavior.AllowDrop="True"
+                localControls:DragnDropBehavior.DropCommand="{Binding DropCommand}"
+                ExtendsContentIntoTitleBar="True"
+                WindowBackdropType="Mica"
+                WindowCornerPreference="Round"
+                WindowStartupLocation="CenterScreen"
+                MinWidth="1024"
+                MinHeight="640"
+                Width="1360"
+                Height="860"
+                mc:Ignorable="d"
+                Title="LogGrok 2.1">
+    <ui:FluentWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
                 <ResourceDictionary Source="Styles/DocumentTemplate.xaml" />
                 <ResourceDictionary Source="Styles/MarkedLinesViewTemplate.xaml" />
                 <ResourceDictionary Source="Styles/ListViewItemStyle.xaml" />
@@ -31,71 +34,75 @@
                 <MenuItem Header="Open Containing Folder" Command="{Binding Model.Content.OpenContainingFolderCommand}" />
             </avalonDockExtensions:MenuItemCollection>
         </ResourceDictionary>
-    </mahapps:MetroWindow.Resources>
-    <mahapps:MetroWindow.LeftWindowCommands>
-        <mahapps:WindowCommands>
-            <Menu VerticalContentAlignment="Center" VerticalAlignment="Center" Margin="0, 0, 5, 0" Background="Transparent">
-                <MenuItem Background="Transparent">
-                    <MenuItem.HeaderTemplate>
-                        <DataTemplate>
-                        <iconPacks:PackIconMaterial  Kind="Menu" Foreground="Azure" Background="Transparent"/>
-                        </DataTemplate>
-                    </MenuItem.HeaderTemplate>
-                    <MenuItem Command="{Binding OpenFileCommand}" Header="Open" />
-                    <MenuItem Command="{Binding ToggleThemeCommand}" Header="Toggle theme" />
-                    <MenuItem Header="Timeline at top"
-                              IsCheckable="True"
-                              IsChecked="{Binding IsTimelineAtTop, Mode=TwoWay}" />
-                    <Separator />
-                    <MenuItem Command="{Binding ExitCommand}" Header="Exit" />
-                </MenuItem>
-            </Menu>
-        </mahapps:WindowCommands>
-    </mahapps:MetroWindow.LeftWindowCommands>
-    <mahapps:MetroWindow.RightWindowCommands>
-        <mahapps:WindowCommands>
-            <Button Command="{Binding ToggleThemeCommand}" ToolTip="Toggle light / dark theme">
-                <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial Width="20"
-                                                Height="20"
-                                                Kind="ThemeLightDark" />
-                    <TextBlock Margin="4 0 0 0"
-                               VerticalAlignment="Center"
-                               Text="theme" />
-                </StackPanel>
-            </Button>
-            <Button Command="{Binding OpenSettings}">
-                <StackPanel Orientation="Horizontal">
-                    <Rectangle Width="20"
-                               Height="20"
-                               Fill="{Binding RelativeSource={RelativeSource AncestorType=Button},
-                                              Path=Foreground}">
-                        <Rectangle.OpacityMask>
-                            <VisualBrush Stretch="Fill" Visual="{StaticResource appbar_settings}" />
-                        </Rectangle.OpacityMask>
-                    </Rectangle>
-                    <TextBlock Margin="4 0 0 0"
-                               VerticalAlignment="Center"
-                               Text="settings" />
-                </StackPanel>
-            </Button>
-        </mahapps:WindowCommands>
+    </ui:FluentWindow.Resources>
 
-    </mahapps:MetroWindow.RightWindowCommands>
-
-    <mahapps:MetroWindow.InputBindings>
+    <ui:FluentWindow.InputBindings>
         <KeyBinding Command="{Binding OpenFileCommand}" Gesture="CTRL+O" />
-    </mahapps:MetroWindow.InputBindings>
+    </ui:FluentWindow.InputBindings>
+
     <Grid>
-        <DockingManager
-            x:Name="DockingManager" Theme="{Binding DockTheme}"
-                                  GridSplitterWidth="10"
-                                  GridSplitterHeight="10"
-                                  avalonDockExtensions:BindingBehavior.CurrentDocument="{Binding CurrentDocument}"
-                                  avalonDockExtensions:BindingBehavior.DocumentViewTemplate="{StaticResource DocumentTemplate}"
-                                  avalonDockExtensions:BindingBehavior.DocumentsSource="{Binding Documents}"
-                                  avalonDockExtensions:BindingBehavior.OnDocumentCloseCommand="{Binding OnDocumentCloseCommand}"
-                                  avalonDockExtensions:DocumentContextMenu.AdditionalContextMenuItems="{StaticResource AdditionalDocumentMenuItems}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="LogGrok 2.1">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="TextGrammarWand24" FontSize="16" />
+            </ui:TitleBar.Icon>
+            <ui:TitleBar.TrailingContent>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:Button Appearance="Transparent"
+                               ToolTip="Open log file (Ctrl+O)"
+                               Command="{Binding OpenFileCommand}">
+                        <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
+                    </ui:Button>
+                    <ui:Button Appearance="Transparent"
+                               ToolTip="Toggle light / dark theme"
+                               Command="{Binding ToggleThemeCommand}">
+                        <ui:SymbolIcon FontSize="16">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="{x:Type ui:SymbolIcon}">
+                                    <Setter Property="Symbol" Value="WeatherSunny24" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                            <Setter Property="Symbol" Value="WeatherMoon24" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                    </ui:Button>
+                    <ToggleButton Margin="4,0"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding IsTimelineAtTop, Mode=TwoWay}"
+                                  ToolTip="Place the timeline at the top">
+                        <ui:SymbolIcon Symbol="ArrowSort24" FontSize="16" />
+                    </ToggleButton>
+                    <ui:Button Appearance="Transparent"
+                               ToolTip="Open settings"
+                               Command="{Binding OpenSettings}">
+                        <ui:SymbolIcon Symbol="Settings24" FontSize="16" />
+                    </ui:Button>
+                    <ui:Button Appearance="Transparent"
+                               ToolTip="Exit"
+                               Command="{Binding ExitCommand}">
+                        <ui:SymbolIcon Symbol="Power24" FontSize="16" />
+                    </ui:Button>
+                </StackPanel>
+            </ui:TitleBar.TrailingContent>
+        </ui:TitleBar>
+
+        <DockingManager x:Name="DockingManager"
+                        Grid.Row="1"
+                        Theme="{Binding DockTheme}"
+                        GridSplitterWidth="10"
+                        GridSplitterHeight="10"
+                        avalonDockExtensions:BindingBehavior.CurrentDocument="{Binding CurrentDocument}"
+                        avalonDockExtensions:BindingBehavior.DocumentViewTemplate="{StaticResource DocumentTemplate}"
+                        avalonDockExtensions:BindingBehavior.DocumentsSource="{Binding Documents}"
+                        avalonDockExtensions:BindingBehavior.OnDocumentCloseCommand="{Binding OnDocumentCloseCommand}"
+                        avalonDockExtensions:DocumentContextMenu.AdditionalContextMenuItems="{StaticResource AdditionalDocumentMenuItems}">
             <DockingManager.LayoutItemContainerStyle>
                 <Style TargetType="{x:Type LayoutItem}">
                     <Setter Property="ToolTip" Value="{Binding Model.Content.Title}" />
@@ -114,4 +121,4 @@
             </DockingManager.LayoutItemContainerStyle>
         </DockingManager>
     </Grid>
-</mahapps:MetroWindow>
+</ui:FluentWindow>

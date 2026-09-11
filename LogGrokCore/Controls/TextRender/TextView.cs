@@ -53,7 +53,8 @@ public class TextView : Control, IClippingRectChangesAware
     private double _cachedWidth;
     private TextModel? _cachedTextModel;
     private bool _isCollapsibleStateDirty;
-    private TextViewSharedFoldingState? _sharedFoldingState;
+    private TextViewSharedFoldingState? _registeredFoldingState;
+    private bool _suppressFoldingNotification;
     private FrameworkElement? _clippingRectProvider;
 
     private UIElementCollection Children
@@ -140,11 +141,13 @@ public class TextView : Control, IClippingRectChangesAware
 
     void SetCollapsibleRanges(List<(int start, int length)>? collapsibleRanges)
     {
+        var sharedFoldingState = SharedFoldingState;
+        UpdateFoldingStateRegistration(collapsibleRanges == null ? null : sharedFoldingState);
+
         if (collapsibleRanges == null)
         {
             _outlineData = null;
             FoldingManager = null;
-            SharedFoldingState?.Unregister(this);
             return;
         }
 
@@ -160,16 +163,59 @@ public class TextView : Control, IClippingRectChangesAware
             _isCollapsibleStateDirty = true;
             InvalidateMeasure();
             InvalidateVisual();
+            if (!_suppressFoldingNotification)
+                SharedFoldingState?.NotifyChanged(this);
         };
 
-        if (SharedFoldingState is not { } sharedFoldingState)
+        if (sharedFoldingState is not { } state)
+        {
+            FoldingManager = null;
             return;
+        }
 
-        SharedFoldingState.Register(this);
         FoldingManager = new FoldingManager(
             _outlineData.CollapsibleRegionsMachine,
-            sharedFoldingState,
-            () => sharedFoldingState.GetDefaultFoldingSettings(collapsibleRangesArray, count));
+            state,
+            () => state.GetDefaultFoldingSettings(collapsibleRangesArray, count));
+    }
+
+    private void UpdateFoldingStateRegistration(TextViewSharedFoldingState? state)
+    {
+        if (ReferenceEquals(_registeredFoldingState, state))
+            return;
+
+        _registeredFoldingState?.Unregister(this);
+        _registeredFoldingState = state;
+        state?.Register(this);
+    }
+
+    internal void OnSharedFoldingStateChanged()
+    {
+        if (_outlineData is not { } outlineData || TextModel is not { } textModel)
+            return;
+
+        if (SharedFoldingState is not { } state || state[textModel.UniqueId] is not { } collapsedLines)
+            return;
+
+        _suppressFoldingNotification = true;
+        try
+        {
+            outlineData.CollapsibleRegionsMachine.UpdateCollapsedLines(collapsedLines);
+        }
+        finally
+        {
+            _suppressFoldingNotification = false;
+        }
+
+        _isCollapsibleStateDirty = true;
+        InvalidateMeasure();
+        InvalidateVisual();
+    }
+
+    private void OnSharedFoldingStatePropertyChanged()
+    {
+        if (TextModel is { } textModel)
+            SetCollapsibleRanges(textModel.CollapsibleRanges);
     }
 
     #endregion
@@ -184,6 +230,21 @@ public class TextView : Control, IClippingRectChangesAware
     {
         get => (Brush)GetValue(SelectionBrushProperty);
         set => SetValue(SelectionBrushProperty, value);
+    }
+
+    #endregion
+
+    #region HighlightBrush property
+
+    public static readonly DependencyProperty HighlightBrushProperty = DependencyProperty.Register(
+        nameof(HighlightBrush), typeof(Brush), typeof(TextView),
+        new FrameworkPropertyMetadata(Brushes.Moccasin, FrameworkPropertyMetadataOptions.AffectsRender,
+            static (d, _) => (d as TextView)?._textControl.InvalidateVisual()));
+
+    public Brush HighlightBrush
+    {
+        get => (Brush)GetValue(HighlightBrushProperty);
+        set => SetValue(HighlightBrushProperty, value);
     }
 
     #endregion
@@ -207,7 +268,8 @@ public class TextView : Control, IClippingRectChangesAware
     public static readonly DependencyProperty SharedFoldingStateProperty = DependencyProperty.RegisterAttached(
         "SharedFoldingState", typeof(TextViewSharedFoldingState), typeof(TextView), 
             new FrameworkPropertyMetadata(default(TextViewSharedFoldingState), 
-                FrameworkPropertyMetadataOptions.Inherits));
+                FrameworkPropertyMetadataOptions.Inherits,
+                static (d, _) => (d as TextView)?.OnSharedFoldingStatePropertyChanged()));
 
     public static void SetSharedFoldingState(DependencyObject element, TextViewSharedFoldingState value)
     {
@@ -219,18 +281,7 @@ public class TextView : Control, IClippingRectChangesAware
         return (TextViewSharedFoldingState)element.GetValue(SharedFoldingStateProperty);
     }
 
-    private TextViewSharedFoldingState? SharedFoldingState
-    {
-        get
-        {
-            if (_sharedFoldingState == null)
-            {
-                _sharedFoldingState = GetSharedFoldingState(this);
-            }
-
-            return _sharedFoldingState;
-        }
-    }
+    private TextViewSharedFoldingState? SharedFoldingState => GetSharedFoldingState(this);
     
     #endregion
 
@@ -595,7 +646,15 @@ public class TextView : Control, IClippingRectChangesAware
             SharedFoldingState is not {} sharedFoldingState)
             return;
         var defaultSettings = sharedFoldingState.GetDefaultSettings(collapsibleRanges, totalLineCount);
-        _outlineData?.CollapsibleRegionsMachine.UpdateCollapsedLines(defaultSettings);
+        _suppressFoldingNotification = true;
+        try
+        {
+            _outlineData?.CollapsibleRegionsMachine.UpdateCollapsedLines(defaultSettings);
+        }
+        finally
+        {
+            _suppressFoldingNotification = false;
+        }
     }
 
     public override string ToString()
