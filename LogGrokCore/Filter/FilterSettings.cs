@@ -11,9 +11,15 @@ namespace LogGrokCore.Filter
         private readonly Dictionary<int, HashSet<string>> _exclusions = new();
         private readonly Indexer _indexer;
 
-        public bool HaveExclusions => _exclusions.Count > 0;
+        public bool HaveExclusions => _exclusions.Values.Any(exclusions => exclusions.Count > 0);
+
+        public (long From, long To)? TimeRange { get; private set; }
+
+        public bool HasTimeRange => TimeRange != null;
         
         public event Action? ExclusionsChanged;
+
+        public event Action? TimeRangeChanged;
 
         public FilterSettings(Indexer indexer, LogMetaInformation metaInformation)
         {
@@ -24,9 +30,11 @@ namespace LogGrokCore.Filter
         {
             get
             {
-                return _exclusions.ToDictionary(
-                    kv => kv.Key, 
-                    kv => kv.Value as IEnumerable<string>);
+                return _exclusions
+                    .Where(kv => kv.Value.Count > 0)
+                    .ToDictionary(
+                        kv => kv.Key,
+                        kv => kv.Value as IEnumerable<string>);
             }
         }
 
@@ -89,6 +97,20 @@ namespace LogGrokCore.Filter
         {
             _exclusions[indexedComponent] = componentValuesToExclude.ToHashSet();
             ExclusionsChanged?.Invoke();
+        }
+
+        public void SetTimeRange(long fromTicks, long toTicks)
+        {
+            if (TimeRange == (fromTicks, toTicks)) return;
+            TimeRange = (fromTicks, toTicks);
+            TimeRangeChanged?.Invoke();
+        }
+
+        public void ClearTimeRange()
+        {
+            if (TimeRange == null) return;
+            TimeRange = null;
+            TimeRangeChanged?.Invoke();
         }
     }
 }

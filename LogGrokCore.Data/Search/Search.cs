@@ -52,14 +52,15 @@ public static class Search
     public static (Progress, SubIndexer, SearchLineIndex) CreateSearchIndex(
         LogModelFacade logModelFacade,
         Regex regex,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        (int StartLine, int EndLine)? lineRange = null)
     {
         var sourceLineIndex = logModelFacade.LineIndex;
         SearchLineIndex lineIndex = new(sourceLineIndex); // searchResultLineNumber -> originalLogLineNumber mapping
         var searchIndexer = logModelFacade.Indexer.CreateSubIndexer(); // components -> searchResultLineNumber
         var progress = new Progress();
 
-        var pipeline = new Pipeline(regex, logModelFacade);
+        var pipeline = new Pipeline(regex, logModelFacade, lineRange);
         Task.Run(async () =>
         {
             try

@@ -10,6 +10,8 @@ namespace LogGrokCore.Data
         private readonly Regex _regex;
         private readonly int _componentCount;
         private readonly int[] _fieldsToStore;
+        private readonly int _timeGroupNumber;
+        private readonly string _timeFormat;
 
         public RegexBasedLineParser(LogMetaInformation logMetaInformation, 
             bool onlyIndexed = false)
@@ -20,20 +22,25 @@ namespace LogGrokCore.Data
             _fieldsToStore = onlyIndexed
                 ? logMetaInformation.IndexedFieldNumbers
                 : Enumerable.Range(0, _componentCount).ToArray();
+            _timeGroupNumber = logMetaInformation.HasTime ? logMetaInformation.TimeGroupNumber : -1;
+            _timeFormat = logMetaInformation.TimeFormat;
         }
 
         public ParseResult Parse(string input)
         {
             var placeholder = new int[LineMetaInformation.GetSizeInts(_componentCount)];
             if (!TryParse(input, 0, input.Length,
-                new LineMetaInformation(placeholder.AsSpan(), _componentCount).ParsedLineComponents))
+                new LineMetaInformation(placeholder.AsSpan(), _componentCount).ParsedLineComponents,
+                out _))
                 throw new InvalidOperationException();
             return new ParseResult(_componentCount, placeholder);
         }
 
         public bool TryParse(string input, int beginning, int length,
-            in ParsedLineComponents parsedLineComponents)
+            in ParsedLineComponents parsedLineComponents, out long timeTicks)
         {
+            timeTicks = -1;
+
             var match = _regex.Match(input, beginning, length);
             if (!match.Success)
                 return false;
@@ -66,6 +73,18 @@ namespace LogGrokCore.Data
                 parsedLineComponents.ComponentStart(index) = lastComponentStart;
                 parsedLineComponents.ComponentLength(index) = lastComponentLength;
                 index++;
+            }
+
+            if (_timeGroupNumber > 0 && _timeGroupNumber < matchCounts.Length &&
+                matchCounts[_timeGroupNumber] > 0)
+            {
+                var timeCapture = caps[_timeGroupNumber];
+                if (timeCapture != null &&
+                    TimestampParser.TryGetTicks(input.AsSpan(timeCapture[0], timeCapture[1]),
+                        _timeFormat, out var ticks))
+                {
+                    timeTicks = ticks;
+                }
             }
 
             return true;

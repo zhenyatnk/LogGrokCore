@@ -13,6 +13,10 @@ namespace LogGrokCore.Data
 
         public string[] IndexedFields { get; set; } = Array.Empty<string>();
 
+        public string TimeField { get; set; } = string.Empty;
+
+        public string TimeFormat { get; set; } = string.Empty;
+
         public string[] Transformations { get; set; } = Array.Empty<string>();
 
         public byte XorMask { get; set; } = 0;

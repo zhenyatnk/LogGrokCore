@@ -44,6 +44,7 @@
                         </DataTemplate>
                     </MenuItem.HeaderTemplate>
                     <MenuItem Command="{Binding OpenFileCommand}" Header="Open" />
+                    <MenuItem Command="{Binding ToggleThemeCommand}" Header="Toggle theme" />
                     <Separator />
                     <MenuItem Command="{Binding ExitCommand}" Header="Exit" />
                 </MenuItem>
@@ -52,6 +53,16 @@
     </mahapps:MetroWindow.LeftWindowCommands>
     <mahapps:MetroWindow.RightWindowCommands>
         <mahapps:WindowCommands>
+            <Button Command="{Binding ToggleThemeCommand}" ToolTip="Toggle light / dark theme">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Width="20"
+                                                Height="20"
+                                                Kind="ThemeLightDark" />
+                    <TextBlock Margin="4 0 0 0"
+                               VerticalAlignment="Center"
+                               Text="theme" />
+                </StackPanel>
+            </Button>
             <Button Command="{Binding OpenSettings}">
                 <StackPanel Orientation="Horizontal">
                     <Rectangle Width="20"

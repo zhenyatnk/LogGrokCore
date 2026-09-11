@@ -62,6 +62,7 @@ namespace LogGrokCore
                 Reuse.Singleton);
             _container.Register<LineIndex>();
             _container.RegisterMapping<ILineIndex, LineIndex>();
+            _container.Register<TimeIndex>(Reuse.Singleton);
             _container.Register<Indexer>(Reuse.Singleton);
             _container.Register<IItemProvider<(int, string)>, LineProvider>();
 
@@ -113,8 +114,9 @@ namespace LogGrokCore
                     var markedLines = r.Resolve<Selection>();
                     var columnSettings = r.Resolve<ColumnSettings>();
                     var transofrmationPerformer = r.Resolve<TransformationPerformer>();
+                    var timeIndex = r.Resolve<TimeIndex>();
                     return pattern => new SearchDocumentViewModel(logModelFacade, filterSettings, viewFactory, pattern,
-                        markedLines, columnSettings, transofrmationPerformer);
+                        markedLines, columnSettings, transofrmationPerformer, timeIndex);
                 });
             
             // view

@@ -11,6 +11,7 @@ using LogGrokCore.AvalonDockExtensions;
 using LogGrokCore.Data;
 using LogGrokCore.MarkedLines;
 using LogGrokCore.Search;
+using LogGrokCore.Theming;
 using Microsoft.Win32;
 
 namespace LogGrokCore
@@ -21,6 +22,7 @@ namespace LogGrokCore
         private readonly ApplicationSettings _applicationSettings;
         private readonly SearchAutocompleteCache _searchAutocompleteCache;
         private readonly SavedSearchPatternStore _savedSearchPatternStore;
+        private readonly UiThemeService _themeService;
 
         public ObservableCollection<DocumentViewModel> Documents { get; }
 
@@ -40,17 +42,20 @@ namespace LogGrokCore
         public MainWindowViewModel(ApplicationSettings applicationSettings, 
             SearchAutocompleteCache searchAutocompleteCache, 
             SavedSearchPatternStore savedSearchPatternStore,
+            UiThemeService themeService,
             Func<ObservableCollection<DocumentViewModel>, MarkedLinesViewModel> markedLinesViewModelFactory)
         {
             _applicationSettings = applicationSettings;
             _searchAutocompleteCache = searchAutocompleteCache;
             _savedSearchPatternStore = savedSearchPatternStore;
+            _themeService = themeService;
             Documents = new ObservableCollection<DocumentViewModel>();
             MarkedLinesViewModel = markedLinesViewModelFactory(Documents);
             OpenSettings = new DelegateCommand(() =>
             { 
                 OpenExternalFile(ApplicationSettings.SettingsFileName);
             });
+            ToggleThemeCommand = new DelegateCommand(ToggleTheme);
 
             MarkedLinesViewModel.NavigationRequested += (document, index) =>
             {
@@ -109,6 +114,16 @@ namespace LogGrokCore
         }
 
         public ICommand OpenSettings { get; }
+
+        public ICommand ToggleThemeCommand { get; }
+
+        public bool IsDarkTheme => _themeService.IsDark;
+
+        private void ToggleTheme()
+        {
+            _themeService.Toggle();
+            InvokePropertyChanged(nameof(IsDarkTheme));
+        }
 
         public ICommand ExitCommand => new DelegateCommand(() => Application.Current.Shutdown());
 

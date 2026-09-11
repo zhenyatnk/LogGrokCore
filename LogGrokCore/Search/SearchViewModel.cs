@@ -49,6 +49,8 @@ namespace LogGrokCore.Search
             ClearSearchCommand = new DelegateCommand(ClearSearch);
             CloseDocumentCommand = DelegateCommand.Create<SearchDocumentViewModel>(CloseDocument);
             AddNewSearchCommand = new DelegateCommand(() => AddNewSearch(_searchPattern.Clone()));
+            FindNextCommand = new DelegateCommand(() => CurrentDocument?.FindNext());
+            FindPreviousCommand = new DelegateCommand(() => CurrentDocument?.FindPrevious());
             SearchTextCommand = new DelegateCommand(SearchText, text => !string.IsNullOrEmpty(text as string));
             Activate = new DelegateCommand(() => SetFocusRequest.Invoke());
             SaveSearchCommand = new DelegateCommand(SaveCurrentSearch);
@@ -73,8 +75,15 @@ namespace LogGrokCore.Search
             set
             {
                 if (_currentDocument == value) return;
+
+                if (_currentDocument != null)
+                    _currentDocument.PropertyChanged -= OnCurrentDocumentPropertyChanged;
+
                 SetAndRaiseIfChanged(ref _currentDocument,  value);
-                
+
+                if (_currentDocument != null)
+                    _currentDocument.PropertyChanged += OnCurrentDocumentPropertyChanged;
+
                 if (_currentDocument == null)
                 {
                     TextToSearch = string.Empty;
@@ -86,8 +95,37 @@ namespace LogGrokCore.Search
                     IsCaseSensitive = searchPattern.IsCaseSensitive;
                     UseRegex = searchPattern.UseRegex;
                 }
+
+                InvokePropertyChanged(nameof(MatchCounterText));
+                InvokePropertyChanged(nameof(CurrentMatchBuckets));
+                InvokePropertyChanged(nameof(CurrentMatchLine));
             }
         }
+
+        private void OnCurrentDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SearchDocumentViewModel.MatchCounterText))
+                InvokePropertyChanged(nameof(MatchCounterText));
+
+            if (e.PropertyName == nameof(SearchDocumentViewModel.MatchBuckets))
+                InvokePropertyChanged(nameof(CurrentMatchBuckets));
+
+            if (e.PropertyName == nameof(SearchDocumentViewModel.CurrentMatchLine))
+                InvokePropertyChanged(nameof(CurrentMatchLine));
+        }
+
+        public string MatchCounterText => CurrentDocument?.MatchCounterText ?? string.Empty;
+
+        public bool[] CurrentMatchBuckets => CurrentDocument?.MatchBuckets ?? Array.Empty<bool>();
+
+        public int CurrentMatchLine => CurrentDocument?.CurrentMatchLine ?? -1;
+        public ICommand FindNextCommand { get; }
+        public ICommand FindPreviousCommand { get; }
+
+        public void FindNext(int anchorOriginalLine) => CurrentDocument?.FindNext(anchorOriginalLine);
+
+        public void FindPrevious(int anchorOriginalLine) => CurrentDocument?.FindPrevious(anchorOriginalLine);
+
         public SetFocusRequest SetFocusRequest { get; } = new(); 
 
         public string TextToSearch

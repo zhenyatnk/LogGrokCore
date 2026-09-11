@@ -10,6 +10,7 @@ using LogGrokCore.Data;
 using LogGrokCore.Diagnostics;
 using LogGrokCore.MarkedLines;
 using LogGrokCore.Search;
+using LogGrokCore.Theming;
 using Splat.DryIoc;
 
 namespace LogGrokCore.Bootstrap
@@ -60,6 +61,8 @@ namespace LogGrokCore.Bootstrap
         {
             base.OnStartup(e);
 
+            _container.Resolve<UiThemeService>().ApplySavedTheme();
+
             var mainWindow = _container.Resolve<MainWindow>();
             mainWindow.Show();
             
@@ -79,6 +82,7 @@ namespace LogGrokCore.Bootstrap
             container.Register<MainWindowViewModel>(Reuse.Singleton);
             container.Register<SearchAutocompleteCache>(Reuse.Singleton); 
             container.Register<SavedSearchPatternStore>(Reuse.Singleton);
+            container.Register<UiThemeService>(Reuse.Singleton);
             container.Register<MarkedLinesViewModel>();
             container.Register<MainWindow>();
         }

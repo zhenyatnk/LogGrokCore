@@ -14,13 +14,15 @@ namespace LogGrokCore
         private readonly IReadOnlyList<ItemViewModel> _headerCollection;
         private readonly Selection _markedLines;
         private readonly TransformationPerformer _transformationPerformer;
+        private readonly TimeIndex _timeIndex;
 
         public LineViewModelCollectionProvider(
             IItemProvider<(int index, string str)> lineProvider,
             ILineParser lineParser,             
             LogHeaderCollection headerCollection,
             Selection markedLines, 
-            TransformationPerformer transformationPerformer)       
+            TransformationPerformer transformationPerformer,
+            TimeIndex timeIndex)       
         {
             _lineProvider = lineProvider;
             _lineParser = lineParser;
@@ -28,15 +30,17 @@ namespace LogGrokCore
 
             _markedLines = markedLines;
             _transformationPerformer = transformationPerformer;
+            _timeIndex = timeIndex;
         }
 
         public (IReadOnlyList<ItemViewModel> headerCollection, IReadOnlyList<ItemViewModel> linesCollectoin, 
             Func<int, int> getIndexByValue) 
             GetLogLinesCollection(
                 Indexer indexer, // index: Components -> log line numbers
-                IReadOnlyDictionary<int, IEnumerable<string>> exclusions)
+                IReadOnlyDictionary<int, IEnumerable<string>> exclusions,
+                (long From, long To)? timeRange = null)
         {
-            var (itemProvider, getIndexByValue) = GetLineProvider(indexer,exclusions);
+            var (itemProvider, getIndexByValue) = GetLineProvider(indexer, exclusions, timeRange);
             var lineCollection = CreateLinesCollection(itemProvider);
             return (_headerCollection,  lineCollection, getIndexByValue);
         }
@@ -59,10 +63,19 @@ namespace LogGrokCore
 
         private (IItemProvider<(int index, string str)> itemProvider, Func<int, int> GetIndexByValue) GetLineProvider(
             Indexer indexer,
-            IReadOnlyDictionary<int, IEnumerable<string>> exclusions)
+            IReadOnlyDictionary<int, IEnumerable<string>> exclusions,
+            (long From, long To)? timeRange)
         {
             //if (exclusions.Count == 0) return (_lineProvider, x=> x);
-            var lineNumbersProvider = indexer.GetIndexedLinesProvider(exclusions);
+            IIndexedLinesProvider lineNumbersProvider = indexer.GetIndexedLinesProvider(exclusions);
+
+            if (timeRange is { } range &&
+                _timeIndex.FindLineRange(range.From, range.To) is { } lineRange)
+            {
+                lineNumbersProvider = new LineRangeIndexedLinesProvider(
+                    lineNumbersProvider, lineRange.StartLine, lineRange.EndLine);
+            }
+
             return (new ItemProviderMapper<(int index, string str)>(lineNumbersProvider, _lineProvider),
                 value => lineNumbersProvider.GetIndexByValue(value));
         }

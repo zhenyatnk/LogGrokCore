@@ -31,9 +31,27 @@ namespace LogGrokCore.Data
 
         public byte XorMask => _logFormat.XorMask;
 
+        public string TimeFormat => _logFormat.TimeFormat;
+
+        public int TimeFieldIndex { get; }
+
+        public bool HasTime => TimeFieldIndex >= 0;
+
+        public int TimeGroupNumber => TimeFieldIndex + 1;
+
         public LogMetaInformation(LogFormat logFormat)
         {
             _logFormat = logFormat;
+            TimeFieldIndex = ResolveTimeFieldIndex();
+        }
+
+        private int ResolveTimeFieldIndex()
+        {
+            if (!string.IsNullOrEmpty(_logFormat.TimeField))
+                return GetFieldIndexByName(_logFormat.TimeField);
+
+            return Array.FindIndex(FieldNames,
+                name => string.Equals(name, "Time", StringComparison.OrdinalIgnoreCase));
         }
 
         private int GetFieldIndexByName(string fieldName) => Array.IndexOf(FieldNames, fieldName);
@@ -43,6 +61,13 @@ namespace LogGrokCore.Data
         
         public int GetIndexedFieldIndexByFieldIndex(int index) =>
             Array.IndexOf(IndexedFieldNumbers, index);
+
+        public string GetFieldNameByIndexedFieldIndex(int indexedFieldIndex)
+        {
+            if (indexedFieldIndex < 0 || indexedFieldIndex >= IndexedFieldNumbers.Length)
+                return string.Empty;
+            return FieldNames[IndexedFieldNumbers[indexedFieldIndex]];
+        }
 
         public bool IsFieldIndexed(string fieldName)
         {

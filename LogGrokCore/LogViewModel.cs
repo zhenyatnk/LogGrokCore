@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -26,6 +27,7 @@ namespace LogGrokCore
         private Regex? _highlightRegex;
         private Func<int, int> _getIndexByValue;
         private readonly FilterSettings _filterSettings;
+        private readonly Selection _markedLines;
         private int _currentItemIndex;
         private readonly IReadOnlyList<ItemViewModel> _headerCollection;
 
@@ -34,16 +36,23 @@ namespace LogGrokCore
             LineViewModelCollectionProvider lineViewModelCollectionProvider,
             GridViewFactory viewFactory,
             FilterSettings filterSettings,
-            ColumnSettings columnSettings)
+            ColumnSettings columnSettings,
+            TimeRangeFilterViewModel timeRangeFilter,
+            Selection markedLines)
         {
             _logModelFacade = logModelFacade;
             _filterSettings = filterSettings;
+            TimeRangeFilter = timeRangeFilter;
+            _markedLines = markedLines;
             
             var lineProvider = _logModelFacade.LineProvider;
             var lineParser = _logModelFacade.LineParser;
             
             _lineViewModelCollectionProvider = lineViewModelCollectionProvider;
             filterSettings.ExclusionsChanged += UpdateFilteredCollection;
+            filterSettings.ExclusionsChanged += RefreshActiveFilters;
+            filterSettings.TimeRangeChanged += UpdateFilteredCollection;
+            markedLines.Changed += RefreshMarkers;
 
             IReadOnlyList<ItemViewModel> lineCollection;
             (_headerCollection, lineCollection, _getIndexByValue) 
@@ -67,16 +76,136 @@ namespace LogGrokCore
                         GetComponentsInSelectedLines(componentIndex));
                 });
             
-            ClearExclusionsCommand = new DelegateCommand(() => _filterSettings.ClearAllExclusions(),
-                () => _filterSettings.HaveExclusions);
+            ClearExclusionsCommand = new DelegateCommand(() => _filterSettings.ClearAllExclusions());
+
+            ClearFiltersCommand = new DelegateCommand(() =>
+            {
+                _filterSettings.ClearAllExclusions();
+                TimeRangeFilter.Reset();
+            });
+
+            NavigateToMarkerCommand = new DelegateCommand(index =>
+            {
+                if (index is int logLineNumber)
+                    NavigateTo(logLineNumber);
+            });
 
             CopySelectedItemsToClipboardCommand = new DelegateCommand(CopySelectedItemsToClipboard, 
                 () => SelectedItems?.Cast<object>().Any() ?? false); 
             
             _viewFactory = viewFactory;
             ColumnSettings = columnSettings;
+            RefreshActiveFilters();
+            TotalLineCount = _logModelFacade.LineCount;
+            RefreshMarkers();
             UpdateDocumentWhileLoading();
             UpdateProgress();
+        }
+
+        public ObservableCollection<FilterChipViewModel> ActiveFilters { get; } = new();
+
+        public ObservableCollection<int> Markers { get; } = new();
+
+        public ICommand NavigateToMarkerCommand { get; }
+
+        private int _totalLineCount;
+        public int TotalLineCount
+        {
+            get => _totalLineCount;
+            private set => SetAndRaiseIfChanged(ref _totalLineCount, value);
+        }
+
+        private bool[] _searchMatches = Array.Empty<bool>();
+        public bool[] SearchMatches
+        {
+            get => _searchMatches;
+            private set => SetAndRaiseIfChanged(ref _searchMatches, value);
+        }
+
+        public void SetSearchMatches(bool[] buckets) => SearchMatches = buckets;
+
+        private int _searchMatchLine = -1;
+        public int SearchMatchLine
+        {
+            get => _searchMatchLine;
+            private set => SetAndRaiseIfChanged(ref _searchMatchLine, value);
+        }
+
+        public void SetSearchMatchLine(int line) => SearchMatchLine = line;
+
+        private int _firstVisibleIndex = -1;
+        public int FirstVisibleIndex
+        {
+            get => _firstVisibleIndex;
+            set
+            {
+                if (_firstVisibleIndex == value)
+                    return;
+
+                _firstVisibleIndex = value;
+                InvokePropertyChanged();
+                UpdateScrollPosition();
+            }
+        }
+
+        private int _scrollPosition = -1;
+        public int ScrollPosition
+        {
+            get => _scrollPosition;
+            private set => SetAndRaiseIfChanged(ref _scrollPosition, value);
+        }
+
+        private void UpdateScrollPosition()
+        {
+            var firstVisible = _firstVisibleIndex;
+            if (firstVisible < 0 || firstVisible >= Lines.Count)
+            {
+                ScrollPosition = -1;
+                return;
+            }
+
+            for (var i = firstVisible; i < Lines.Count; i++)
+            {
+                if (Lines[i] is LineViewModel line)
+                {
+                    ScrollPosition = line.Index;
+                    return;
+                }
+            }
+
+            ScrollPosition = -1;
+        }
+
+        public TimeRangeFilterViewModel TimeRangeFilter { get; }
+
+        public bool HaveExclusions => _filterSettings.HaveExclusions;
+
+        private void RefreshActiveFilters()
+        {
+            ActiveFilters.Clear();
+            foreach (var (indexedComponentIndex, values) in _filterSettings.Exclusions)
+            {
+                var excludedValues = values.ToList();
+                if (excludedValues.Count == 0) continue;
+
+                var fieldName = MetaInformation.GetFieldNameByIndexedFieldIndex(indexedComponentIndex);
+                ActiveFilters.Add(new FilterChipViewModel(fieldName, indexedComponentIndex,
+                    excludedValues, _filterSettings));
+            }
+
+            InvokePropertyChanged(nameof(HaveExclusions));
+        }
+
+        private void RefreshMarkers()
+        {
+            Markers.Clear();
+
+            var totalLineCount = TotalLineCount;
+            foreach (var logLineIndex in _markedLines)
+            {
+                if (logLineIndex >= 0 && (totalLineCount <= 0 || logLineIndex < totalLineCount))
+                    Markers.Add(logLineIndex);
+            }
         }
 
         public ColumnSettings ColumnSettings
@@ -90,6 +219,18 @@ namespace LogGrokCore
             set => SetAndRaiseIfChanged(ref _currentItemIndex, value);
         }
 
+        public int CurrentOriginalLine
+        {
+            get
+            {
+                var index = CurrentItemIndex;
+                if (index < 0 || index >= Lines.Count)
+                    return -1;
+
+                return Lines[index] is LineViewModel line ? line.Index : -1;
+            }
+        }
+
         public bool CanFilter => true;
 
         public LogMetaInformation MetaInformation => _logModelFacade.MetaInformation;
@@ -101,6 +242,8 @@ namespace LogGrokCore
         public ICommand ExcludeAllButCommand { get; }
         
         public ICommand ClearExclusionsCommand { get; }
+
+        public ICommand ClearFiltersCommand { get; }
 
         public IEnumerable? SelectedItems
         {
@@ -143,6 +286,11 @@ namespace LogGrokCore
         {
             NavigateToLineRequest.Raise(_getIndexByValue(logLineNumber) + _headerCollection.Count);
         }
+
+        public void NavigateToScrollIndex(int scrollIndex)
+        {
+            NavigateToLineRequest.Raise(scrollIndex);
+        }
         
         private IEnumerable<string> GetComponentsInSelectedLines(int componentIndex)
         {
@@ -157,12 +305,17 @@ namespace LogGrokCore
             while (!_logModelFacade.IsLoaded)
             {
                 Lines.UpdateCount();
+                TotalLineCount = _logModelFacade.LineCount;
+                RefreshMarkers();
                 await Task.Delay(delay);
                 if (delay < 500)
                     delay *= 2;
             }
 
             Lines.UpdateCount();
+            TotalLineCount = _logModelFacade.LineCount;
+            TimeRangeFilter.Refresh();
+            RefreshMarkers();
             IsLoading = false;
         }
 
@@ -202,20 +355,26 @@ namespace LogGrokCore
             var originalLineIndex = (item as LineViewModel)?.Index;
 
             var exclusionsCopy = _filterSettings.Exclusions.ToDictionary(kv 
-                => kv.Key, kv => kv.Value); 
+                => kv.Key, kv => kv.Value);
+            var timeRangeCopy = _filterSettings.TimeRange;
             var (headerCollection, linesCollection, getIndexByValue) 
                 = await Task.Factory.StartNew(() => _lineViewModelCollectionProvider.GetLogLinesCollection(
                     _logModelFacade.Indexer,
-                    _filterSettings.Exclusions));
+                    _filterSettings.Exclusions,
+                    timeRangeCopy));
 
             var newExclusionsCopy = _filterSettings.Exclusions.ToList();
-            if (!exclusionsCopy.SequenceEqual(newExclusionsCopy))
+            if (!exclusionsCopy.SequenceEqual(newExclusionsCopy) ||
+                _filterSettings.TimeRange != timeRangeCopy)
             {
                 return;
             }
             
             _getIndexByValue = getIndexByValue;
             Lines.Reset(headerCollection, linesCollection);
+            TotalLineCount = _logModelFacade.LineCount;
+            RefreshMarkers();
+            UpdateScrollPosition();
 
             if (originalLineIndex is { } index)
             {
