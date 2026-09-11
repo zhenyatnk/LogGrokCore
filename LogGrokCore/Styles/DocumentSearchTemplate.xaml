@@ -147,13 +147,6 @@
                     </Style>
                 </TextBox.Style>
             </TextBox>
-            <TextBlock Grid.Row="0"
-                       Grid.Column="4"
-                       Margin="6,0,0,0"
-                       VerticalAlignment="Center"
-                       FontStyle="Italic"
-                       Text="{Binding MatchCounterText}"
-                       ToolTip="F3 - next match, Shift+F3 - previous match" />
             <ToggleButton x:Name="SavedSearchToggleButton"
                           Grid.Row="0"
                           Grid.Column="2"

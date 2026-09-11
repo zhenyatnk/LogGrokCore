@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace LogGrokCore.Data
@@ -5,7 +6,11 @@ namespace LogGrokCore.Data
     public sealed class TimeIndex
     {
         private readonly List<long> _ticks = new();
+        private readonly List<int> _dayBoundaries = new();
         private long _lastTicks;
+        private long _lastRawTicks;
+        private long _lastDayNumber = long.MinValue;
+        private long _dayOffset;
         private long _minTicks = long.MaxValue;
         private long _maxTicks = long.MinValue;
 
@@ -14,6 +19,8 @@ namespace LogGrokCore.Data
         public bool IsMonotonic { get; private set; } = true;
 
         public int Count => _ticks.Count;
+
+        public IReadOnlyList<int> DayBoundaries => _dayBoundaries;
 
         public long MinTicks => _minTicks;
 
@@ -27,16 +34,36 @@ namespace LogGrokCore.Data
                 return;
             }
 
-            if (_ticks.Count > 0 && ticks < _lastTicks)
+            var normalized = ticks;
+            if (ticks < TimeSpan.TicksPerDay)
+            {
+                if (_ticks.Count > 0 && ticks < _lastRawTicks &&
+                    _lastRawTicks - ticks > TimeSpan.TicksPerHour)
+                {
+                    _dayOffset += TimeSpan.TicksPerDay;
+                }
+
+                normalized = ticks + _dayOffset;
+                if (normalized < _lastTicks)
+                    normalized = _lastTicks;
+            }
+
+            if (_ticks.Count > 0 && normalized < _lastTicks)
                 IsMonotonic = false;
 
-            _lastTicks = ticks;
+            _lastRawTicks = ticks;
+            _lastTicks = normalized;
             HasTime = true;
 
-            if (ticks < _minTicks) _minTicks = ticks;
-            if (ticks > _maxTicks) _maxTicks = ticks;
+            var dayNumber = normalized / TimeSpan.TicksPerDay;
+            if (_ticks.Count > 0 && dayNumber != _lastDayNumber)
+                _dayBoundaries.Add(_ticks.Count);
+            _lastDayNumber = dayNumber;
 
-            _ticks.Add(ticks);
+            if (normalized < _minTicks) _minTicks = normalized;
+            if (normalized > _maxTicks) _maxTicks = normalized;
+
+            _ticks.Add(normalized);
         }
 
         public long GetTicksAt(int index) => _ticks[index];

@@ -33,6 +33,63 @@ public class TimeIndexTests
     }
 
     [TestMethod]
+    public void NormalizesDayRolloverForTimeOfDayLogs()
+    {
+        var index = new TimeIndex();
+        index.Add(TimeSpan.FromHours(23).Add(TimeSpan.FromMinutes(59)).Ticks);
+        index.Add(TimeSpan.FromMinutes(1).Ticks);
+
+        Assert.IsTrue(index.HasTime);
+        Assert.IsTrue(index.IsMonotonic);
+        Assert.IsTrue(index.MaxTicks > index.MinTicks);
+        Assert.IsNotNull(index.FindLineRange(index.MinTicks, index.MaxTicks));
+    }
+
+    [TestMethod]
+    public void ClampsSmallOutOfOrderTimeOfDayTicks()
+    {
+        var index = new TimeIndex();
+        index.Add(TimeSpan.FromSeconds(10).Ticks);
+        index.Add(TimeSpan.FromSeconds(9).Ticks);
+
+        Assert.IsTrue(index.IsMonotonic);
+        Assert.AreEqual(TimeSpan.FromSeconds(10).Ticks, index.GetTicksAt(1));
+    }
+
+    [TestMethod]
+    public void TracksDayBoundaryForTimeOfDayRollover()
+    {
+        var index = new TimeIndex();
+        index.Add(TimeSpan.FromHours(23).Add(TimeSpan.FromMinutes(59)).Ticks);
+        index.Add(TimeSpan.FromMinutes(1).Ticks);
+        index.Add(TimeSpan.FromMinutes(2).Ticks);
+
+        Assert.AreEqual(1, index.DayBoundaries.Count);
+        Assert.AreEqual(1, index.DayBoundaries[0]);
+    }
+
+    [TestMethod]
+    public void TracksDayBoundaryForAbsoluteTicks()
+    {
+        var index = new TimeIndex();
+        index.Add(At(0));
+        index.Add(At(86400));
+
+        Assert.AreEqual(1, index.DayBoundaries.Count);
+        Assert.AreEqual(1, index.DayBoundaries[0]);
+    }
+
+    [TestMethod]
+    public void HasNoDayBoundaryWithinSameDay()
+    {
+        var index = new TimeIndex();
+        index.Add(TimeSpan.FromHours(8).Ticks);
+        index.Add(TimeSpan.FromHours(9).Ticks);
+
+        Assert.AreEqual(0, index.DayBoundaries.Count);
+    }
+
+    [TestMethod]
     public void MissingTimestampReusesPreviousValue()
     {
         var index = new TimeIndex();

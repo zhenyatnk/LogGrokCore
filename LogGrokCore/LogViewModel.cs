@@ -52,6 +52,7 @@ namespace LogGrokCore
             filterSettings.ExclusionsChanged += UpdateFilteredCollection;
             filterSettings.ExclusionsChanged += RefreshActiveFilters;
             filterSettings.TimeRangeChanged += UpdateFilteredCollection;
+            filterSettings.LineRangeChanged += UpdateFilteredCollection;
             markedLines.Changed += RefreshMarkers;
 
             IReadOnlyList<ItemViewModel> lineCollection;
@@ -201,10 +202,16 @@ namespace LogGrokCore
             Markers.Clear();
 
             var totalLineCount = TotalLineCount;
+            var exclusions = _filterSettings.Exclusions;
             foreach (var logLineIndex in _markedLines)
             {
-                if (logLineIndex >= 0 && (totalLineCount <= 0 || logLineIndex < totalLineCount))
-                    Markers.Add(logLineIndex);
+                if (logLineIndex < 0 || (totalLineCount > 0 && logLineIndex >= totalLineCount))
+                    continue;
+
+                if (!_logModelFacade.Indexer.IsLineIncluded(logLineIndex, exclusions))
+                    continue;
+
+                Markers.Add(logLineIndex);
             }
         }
 
@@ -357,15 +364,18 @@ namespace LogGrokCore
             var exclusionsCopy = _filterSettings.Exclusions.ToDictionary(kv 
                 => kv.Key, kv => kv.Value);
             var timeRangeCopy = _filterSettings.TimeRange;
+            var lineRangeCopy = _filterSettings.LineRange;
             var (headerCollection, linesCollection, getIndexByValue) 
                 = await Task.Factory.StartNew(() => _lineViewModelCollectionProvider.GetLogLinesCollection(
                     _logModelFacade.Indexer,
                     _filterSettings.Exclusions,
-                    timeRangeCopy));
+                    timeRangeCopy,
+                    lineRangeCopy));
 
             var newExclusionsCopy = _filterSettings.Exclusions.ToList();
             if (!exclusionsCopy.SequenceEqual(newExclusionsCopy) ||
-                _filterSettings.TimeRange != timeRangeCopy)
+                _filterSettings.TimeRange != timeRangeCopy ||
+                _filterSettings.LineRange != lineRangeCopy)
             {
                 return;
             }

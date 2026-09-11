@@ -36,6 +36,9 @@ namespace LogGrokCore.Controls.ListControls.VirtualizingStackPanel
         {
             var panel = (VirtualizingStackPanel) d;
             var newValue = (int) e.NewValue;
+            var itemCount = panel.ListView.Items.Count;
+            if (newValue >= itemCount)
+                newValue = itemCount - 1;
             if (newValue < 0)
                 panel._selection.Clear();
             else if (panel.ReplaceSelectionOnCurrentPosition)

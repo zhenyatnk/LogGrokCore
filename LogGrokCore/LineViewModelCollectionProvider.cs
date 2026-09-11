@@ -38,9 +38,10 @@ namespace LogGrokCore
             GetLogLinesCollection(
                 Indexer indexer, // index: Components -> log line numbers
                 IReadOnlyDictionary<int, IEnumerable<string>> exclusions,
-                (long From, long To)? timeRange = null)
+                (long From, long To)? timeRange = null,
+                (int From, int To)? lineRange = null)
         {
-            var (itemProvider, getIndexByValue) = GetLineProvider(indexer, exclusions, timeRange);
+            var (itemProvider, getIndexByValue) = GetLineProvider(indexer, exclusions, timeRange, lineRange);
             var lineCollection = CreateLinesCollection(itemProvider);
             return (_headerCollection,  lineCollection, getIndexByValue);
         }
@@ -64,16 +65,22 @@ namespace LogGrokCore
         private (IItemProvider<(int index, string str)> itemProvider, Func<int, int> GetIndexByValue) GetLineProvider(
             Indexer indexer,
             IReadOnlyDictionary<int, IEnumerable<string>> exclusions,
-            (long From, long To)? timeRange)
+            (long From, long To)? timeRange,
+            (int From, int To)? lineRange)
         {
             //if (exclusions.Count == 0) return (_lineProvider, x=> x);
             IIndexedLinesProvider lineNumbersProvider = indexer.GetIndexedLinesProvider(exclusions);
 
             if (timeRange is { } range &&
-                _timeIndex.FindLineRange(range.From, range.To) is { } lineRange)
+                _timeIndex.FindLineRange(range.From, range.To) is { } timeLineRange)
             {
                 lineNumbersProvider = new LineRangeIndexedLinesProvider(
-                    lineNumbersProvider, lineRange.StartLine, lineRange.EndLine);
+                    lineNumbersProvider, timeLineRange.StartLine, timeLineRange.EndLine);
+            }
+            else if (lineRange is { } fallbackLineRange)
+            {
+                lineNumbersProvider = new LineRangeIndexedLinesProvider(
+                    lineNumbersProvider, fallbackLineRange.From, fallbackLineRange.To);
             }
 
             return (new ItemProviderMapper<(int index, string str)>(lineNumbersProvider, _lineProvider),

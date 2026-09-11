@@ -16,10 +16,16 @@ namespace LogGrokCore.Filter
         public (long From, long To)? TimeRange { get; private set; }
 
         public bool HasTimeRange => TimeRange != null;
+
+        public (int From, int To)? LineRange { get; private set; }
+
+        public bool HasLineRange => LineRange != null;
         
         public event Action? ExclusionsChanged;
 
         public event Action? TimeRangeChanged;
+
+        public event Action? LineRangeChanged;
 
         public FilterSettings(Indexer indexer, LogMetaInformation metaInformation)
         {
@@ -111,6 +117,20 @@ namespace LogGrokCore.Filter
             if (TimeRange == null) return;
             TimeRange = null;
             TimeRangeChanged?.Invoke();
+        }
+
+        public void SetLineRange(int fromLine, int toLine)
+        {
+            if (LineRange == (fromLine, toLine)) return;
+            LineRange = (fromLine, toLine);
+            LineRangeChanged?.Invoke();
+        }
+
+        public void ClearLineRange()
+        {
+            if (LineRange == null) return;
+            LineRange = null;
+            LineRangeChanged?.Invoke();
         }
     }
 }

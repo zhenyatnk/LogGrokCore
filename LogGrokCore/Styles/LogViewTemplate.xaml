@@ -95,12 +95,14 @@
                                              MinText="{Binding TimeRangeFilter.MinText}"
                                              MaxText="{Binding TimeRangeFilter.MaxText}"
                                              DurationText="{Binding TimeRangeFilter.DurationText}"
+                                             UseLineNumbers="{Binding TimeRangeFilter.IsLineNumberMode}"
                                              ScrollPosition="{Binding ScrollPosition}"
                                              ScrollIndicatorBrush="#FF00C853"
                                              MatchLine="{Binding SearchMatchLine}"
                                              MatchLineBrush="#FFFF00FF"
                                              MarkerBrush="#FFE81123"
                                              MatchBrush="#A0F2A900"
+                                             DayBoundaryBrush="#FF8E8E8E"
                                              MinimapBackground="{DynamicResource MahApps.Brushes.Control.Background}"
                                              SelectionBrush="#33007ACC"
                                              DimBrush="#40000000"
@@ -108,7 +110,7 @@
                                              DurationForeground="{DynamicResource MahApps.Brushes.ThemeForeground}"
                                              DurationBackground="Transparent"
                                              NavigateCommand="{Binding NavigateToMarkerCommand}"
-                                             ToolTip="Timeline: drag the handles to filter by time; Ctrl+drag the selection to move it; click to navigate" />
+                                             ToolTip="Timeline: drag the handles to filter by time (or line numbers when no time is available); Ctrl+drag the selection to move it; click to navigate" />
             <Grid Grid.Row="3">
             <listControls:ListView ItemsSource="{Binding Lines}"
                                     SelectionMode="Extended"

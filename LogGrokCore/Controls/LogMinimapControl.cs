@@ -77,6 +77,10 @@ namespace LogGrokCore.Controls
             nameof(MatchBrush), typeof(Brush), typeof(LogMinimapControl),
             new FrameworkPropertyMetadata(Brushes.DodgerBlue, FrameworkPropertyMetadataOptions.AffectsRender));
 
+        public static readonly DependencyProperty DayBoundaryBrushProperty = DependencyProperty.Register(
+            nameof(DayBoundaryBrush), typeof(Brush), typeof(LogMinimapControl),
+            new FrameworkPropertyMetadata(Brushes.Gray, FrameworkPropertyMetadataOptions.AffectsRender));
+
         public static readonly DependencyProperty MinimapBackgroundProperty = DependencyProperty.Register(
             nameof(MinimapBackground), typeof(Brush), typeof(LogMinimapControl),
             new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -100,6 +104,10 @@ namespace LogGrokCore.Controls
         public static readonly DependencyProperty DurationBackgroundProperty = DependencyProperty.Register(
             nameof(DurationBackground), typeof(Brush), typeof(LogMinimapControl),
             new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        public static readonly DependencyProperty UseLineNumbersProperty = DependencyProperty.Register(
+            nameof(UseLineNumbers), typeof(bool), typeof(LogMinimapControl),
+            new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
 
         public static readonly DependencyProperty ScrollPositionProperty = DependencyProperty.Register(
             nameof(ScrollPosition), typeof(int), typeof(LogMinimapControl),
@@ -221,6 +229,12 @@ namespace LogGrokCore.Controls
             set => SetValue(MatchBrushProperty, value);
         }
 
+        public Brush DayBoundaryBrush
+        {
+            get => (Brush)GetValue(DayBoundaryBrushProperty);
+            set => SetValue(DayBoundaryBrushProperty, value);
+        }
+
         public Brush MinimapBackground
         {
             get => (Brush)GetValue(MinimapBackgroundProperty);
@@ -255,6 +269,12 @@ namespace LogGrokCore.Controls
         {
             get => (Brush)GetValue(DurationBackgroundProperty);
             set => SetValue(DurationBackgroundProperty, value);
+        }
+
+        public bool UseLineNumbers
+        {
+            get => (bool)GetValue(UseLineNumbersProperty);
+            set => SetValue(UseLineNumbersProperty, value);
         }
 
         public int ScrollPosition
@@ -309,6 +329,7 @@ namespace LogGrokCore.Controls
                 drawingContext.DrawRectangle(background, null, new Rect(0, 0, width, height));
 
             DrawMatchBuckets(drawingContext, width, height);
+            DrawDayBoundaries(drawingContext, width, height);
             DrawMarkers(drawingContext, width, height);
 
             var rangeActive = IsRangeActive();
@@ -400,6 +421,44 @@ namespace LogGrokCore.Controls
             }
         }
 
+        private void DrawDayBoundaries(DrawingContext drawingContext, double width, double height)
+        {
+            if (UseLineNumbers)
+                return;
+
+            var timeIndex = TimeIndex;
+            var count = ItemCount;
+            if (timeIndex == null || count <= 0)
+                return;
+
+            var brush = DayBoundaryBrush;
+            if (brush == null)
+                return;
+
+            var lineWidth = 1.0;
+            foreach (var index in timeIndex.DayBoundaries)
+            {
+                if (index < 0 || index >= count)
+                    continue;
+
+                var center = CenterOf(index, count, width);
+                var left = Math.Clamp(center - lineWidth / 2, 0, Math.Max(0, width - lineWidth));
+                drawingContext.DrawRectangle(brush, null, new Rect(left, 0, lineWidth, height));
+
+                var half = 4.0;
+                var geometry = new StreamGeometry();
+                using (var context = geometry.Open())
+                {
+                    context.BeginFigure(new Point(center - half, 0), true, true);
+                    context.LineTo(new Point(center + half, 0), true, false);
+                    context.LineTo(new Point(center, 8), true, false);
+                }
+
+                geometry.Freeze();
+                drawingContext.DrawGeometry(brush, null, geometry);
+            }
+        }
+
         private void DrawMarkers(DrawingContext drawingContext, double width, double height)
         {
             var markers = Markers;
@@ -418,7 +477,6 @@ namespace LogGrokCore.Controls
                 drawingContext.DrawRectangle(MarkerBrush, null, new Rect(left, 0, markerWidth, height));
             }
         }
-
         private void DrawSelection(DrawingContext drawingContext, double width, double height, double lowerX, double upperX)
         {
             var dim = DimBrush;
@@ -627,7 +685,7 @@ namespace LogGrokCore.Controls
                 return;
             }
 
-            var value = LineToValue(XToLine(positionX));
+            var value = LineToValue(XToValueIndex(positionX));
             if (_dragHandle == DragHandle.Lower)
                 _dragLowerValue = Math.Clamp(value, Minimum, Math.Max(Minimum, _dragUpperValue - 1));
             else
@@ -643,7 +701,8 @@ namespace LogGrokCore.Controls
                 return (0, 0);
 
             var timeIndex = TimeIndex;
-            if (timeIndex is { HasTime: true } &&
+            if (!UseLineNumbers &&
+                timeIndex is { HasTime: true } &&
                 timeIndex.FindLineRange((long)lower, (long)upper) is { } range)
             {
                 var startLine = Math.Clamp(range.StartLine, 0, count);
@@ -670,19 +729,19 @@ namespace LogGrokCore.Controls
                 return Maximum;
 
             var timeIndex = TimeIndex;
-            if (timeIndex is { HasTime: true } && timeIndex.Count > 0)
+            if (!UseLineNumbers && timeIndex is { HasTime: true } && timeIndex.Count > 0)
                 return timeIndex.GetTicksAt(Math.Clamp(line, 0, timeIndex.Count - 1));
 
             return Minimum + (double)line / count * (Maximum - Minimum);
         }
 
-        private int XToLine(double x)
+        private int XToValueIndex(double x)
         {
             var count = ItemCount;
             if (count <= 0 || ActualWidth <= 0)
                 return 0;
 
-            return (int)Math.Clamp(Math.Floor(x / ActualWidth * count), 0, count - 1);
+            return (int)Math.Clamp(Math.Floor(x / ActualWidth * count), 0, count);
         }
 
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
@@ -771,17 +830,17 @@ namespace LogGrokCore.Controls
         {
             if (_dragHandle != DragHandle.None)
             {
-                var ticks = (long)Math.Max(0, GetEffectiveUpper() - GetEffectiveLower());
-                return FormatDurationCompact(TimeSpan.FromTicks(ticks));
+                var size = (long)Math.Max(0, GetEffectiveUpper() - GetEffectiveLower());
+                return UseLineNumbers
+                    ? FormatLineCount(size)
+                    : DurationFormatter.Format(size);
             }
 
             return DurationText;
         }
 
-        private static string FormatDurationCompact(TimeSpan duration) =>
-            duration.TotalHours >= 1
-                ? $"{(int)duration.TotalHours}:{duration.Minutes:00}:{duration.Seconds:00}"
-                : $"{duration.Minutes}:{duration.Seconds:00}";
+        private static string FormatLineCount(long count) =>
+            count == 1 ? "1 line" : $"{count} lines";
 
         private static double CenterOf(int index, int count, double width) =>
             index * width / count;

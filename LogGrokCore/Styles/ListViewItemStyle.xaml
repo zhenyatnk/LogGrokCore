@@ -78,6 +78,11 @@
                 <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent3}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Highlight}" />
             </MultiTrigger>
+            <DataTrigger Binding="{Binding DataContext.IsDarkTheme,
+                         RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                         Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}" />
+            </DataTrigger>
         </Style.Triggers>
     </Style>
 </ResourceDictionary>

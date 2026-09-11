@@ -62,6 +62,7 @@ namespace LogGrokCore.Search
             _filterSettings = filterSettings;
             _filterSettings.ExclusionsChanged += UpdateLines;
             _filterSettings.TimeRangeChanged += StartSearch;
+            _filterSettings.LineRangeChanged += StartSearch;
 
             _markedLines = markedLines;
             _transformationPerformer = transformationPerformer;
@@ -76,7 +77,8 @@ namespace LogGrokCore.Search
                         return;
 
                     var resultIndex = _currentSearchLineIndex?.GetIndexByOriginalIndex(itemViewModel.Index) ?? -1;
-                    if (resultIndex >= 0)
+                    if (resultIndex >= 0 && resultIndex < Lines.Count
+                        && ReferenceEquals(Lines[resultIndex], itemViewModel))
                         CurrentItemIndex = resultIndex;
 
                     NavigateToIndexRequested?.Invoke(itemViewModel.Index);
@@ -240,6 +242,7 @@ namespace LogGrokCore.Search
         {
             _filterSettings.ExclusionsChanged -= UpdateLines;
             _filterSettings.TimeRangeChanged -= StartSearch;
+            _filterSettings.LineRangeChanged -= StartSearch;
 
             lock (_cancellationTokenSourceLock)
             {
@@ -268,6 +271,8 @@ namespace LogGrokCore.Search
             (int StartLine, int EndLine)? lineRange = null;
             if (_filterSettings.TimeRange is { } timeRange)
                 lineRange = _timeIndex.FindLineRange(timeRange.From, timeRange.To);
+            else if (_filterSettings.LineRange is { } fallbackLineRange)
+                lineRange = fallbackLineRange;
 
             var (progress, searchIndexer, searchLineIndex) = Data.Search.Search.CreateSearchIndex(
                 _logModelFacade,
@@ -380,7 +385,7 @@ namespace LogGrokCore.Search
                 Lines?.UpdateCount();
                 SearchProgress = progress.Value * 100.0;
                 SetIsSearching(false);
-                MatchBuckets = BuildBuckets(_currentSearchLineIndex);
+                MatchBuckets = BuildBuckets();
                 InvokePropertyChanged(nameof(Title));
                 InvokePropertyChanged(nameof(MatchCounterText));
             }
@@ -405,7 +410,7 @@ namespace LogGrokCore.Search
                 _currentSearchIndexer, _currentSearchLineIndex, _filterSettings.Exclusions);
             
             Lines.Reset(new List<ItemViewModel>(), foundLines);
-            MatchBuckets = BuildBuckets(_currentSearchLineIndex);
+            MatchBuckets = BuildBuckets();
             InvokePropertyChanged(nameof(MatchCounterText));
             InvokePropertyChanged(nameof(CurrentMatchLine));
 
@@ -418,21 +423,29 @@ namespace LogGrokCore.Search
                 NavigateToLineRequest.Raise(_currentSearchLineIndex.GetIndexByOriginalIndex(index));
         }
 
-        private bool[] BuildBuckets(SearchLineIndex? searchLineIndex)
+        private bool[] BuildBuckets()
         {
             var buckets = new bool[MatchBucketCount];
             var totalLines = _logModelFacade.LineCount;
-            if (searchLineIndex == null || totalLines <= 0 || searchLineIndex.Count == 0)
+            if (_currentSearchIndexer == null || _currentSearchLineIndex == null
+                || totalLines <= 0 || _currentSearchLineIndex.Count == 0)
+                return buckets;
+
+            var filteredSearchResults =
+                _currentSearchIndexer.GetIndexedLinesProvider(_filterSettings.Exclusions);
+            var originalLineNumbers = new ItemProviderMapper<int>(filteredSearchResults, _currentSearchLineIndex);
+            var matchCount = originalLineNumbers.Count;
+            if (matchCount == 0)
                 return buckets;
 
             const int chunkSize = 8192;
-            var buffer = ArrayPool<int>.Shared.Rent(Math.Min(chunkSize, searchLineIndex.Count));
+            var buffer = ArrayPool<int>.Shared.Rent(Math.Min(chunkSize, matchCount));
             try
             {
-                for (var start = 0; start < searchLineIndex.Count; start += chunkSize)
+                for (var start = 0; start < matchCount; start += chunkSize)
                 {
-                    var count = Math.Min(chunkSize, searchLineIndex.Count - start);
-                    searchLineIndex.Fetch(start, buffer.AsSpan(0, count));
+                    var count = Math.Min(chunkSize, matchCount - start);
+                    originalLineNumbers.Fetch(start, buffer.AsSpan(0, count));
                     for (var i = 0; i < count; i++)
                     {
                         var bucket = (int)((long)buffer[i] * MatchBucketCount / totalLines);
