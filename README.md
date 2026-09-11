@@ -19,13 +19,22 @@ remaining responsive even on multi-gigabyte files.
   available as filterable columns and as search facets.
 - **Search** — regex search with a progress indicator, result navigation and an
   autocomplete cache. Search patterns can be saved and reused.
-- **Filtering** — filter by indexed column values directly from the grid.
+- **Filtering** — filter by indexed column values directly from the grid, with
+  removable filter chips.
+- **Time filter & timeline** — a minimap/timeline strip (top or bottom) to
+  filter by time range (or line numbers when no timestamps are available) and to
+  navigate through marked lines.
+- **JSON folding** — multi-line JSON blobs and oversized strings are formatted
+  and can be expanded/collapsed inline. The folding state is shared across the
+  log grid, search results and the marked-lines view of the same document.
 - **Color rules** — highlight matching lines and text with rules in
-  `appsettings.yaml`.
+  `appsettings.yaml`; colors adapt to the active theme.
 - **Marked lines** — mark interesting lines and browse them in a dedicated view.
 - **Text transformations** — rewrite matched fragments of a line before display
   (for example Base64/JSON decoding) via `Transformations`.
 - **XOR-masked logs** — transparently de-obfuscate XOR-encoded log files.
+- **Light & dark themes** — switch theme from the title bar; chrome, log colors
+  and search highlighting follow the active theme.
 - **Crash dumps** — optional Windows Error Reporting local dumps for diagnostics.
 - **Multiple documents** — dockable tabs powered by AvalonDock.
 
@@ -65,6 +74,10 @@ dotnet test
 | `LogGrokCore.Data`   | Platform-agnostic core: stream loading, line parsing, indexes, search, virtualization. |
 | `LogGrokCore.Tests`  | Tests for the UI layer.                                           |
 | `LogGrokCore.Data.Tests` | Tests for the core data layer.                                |
+
+The UI is built on [WPF-UI](https://github.com/lepoco/wpfui) (Fluent controls
+and theming) with [AvalonDock](https://github.com/Dirkster99/AvalonDock) for
+docking.
 
 ### `LogGrokCore.Data`
 
