@@ -34,6 +34,8 @@ Settings:
     # BigLine: prune|break
     BigLine: prune
     BigLineSize: 4096
+    # Timeline position: true - at the top of the log view, false - above the search bar
+    TimelineAtTop: false
   LogFormats:
     - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)
       IndexedFields:

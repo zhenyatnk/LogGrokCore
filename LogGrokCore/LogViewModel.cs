@@ -16,7 +16,7 @@ using LogGrokCore.Filter;
 
 namespace LogGrokCore
 {
-    public class LogViewModel : ViewModelBase
+    public class LogViewModel : ViewModelBase, IDisposable
     {
         private readonly GridViewFactory _viewFactory;
         private double _progress;
@@ -28,6 +28,7 @@ namespace LogGrokCore
         private Func<int, int> _getIndexByValue;
         private readonly FilterSettings _filterSettings;
         private readonly Selection _markedLines;
+        private readonly TimelinePlacementService _timelinePlacementService;
         private int _currentItemIndex;
         private readonly IReadOnlyList<ItemViewModel> _headerCollection;
 
@@ -38,12 +39,15 @@ namespace LogGrokCore
             FilterSettings filterSettings,
             ColumnSettings columnSettings,
             TimeRangeFilterViewModel timeRangeFilter,
-            Selection markedLines)
+            Selection markedLines,
+            TimelinePlacementService timelinePlacementService)
         {
             _logModelFacade = logModelFacade;
             _filterSettings = filterSettings;
             TimeRangeFilter = timeRangeFilter;
             _markedLines = markedLines;
+            _timelinePlacementService = timelinePlacementService;
+            _timelinePlacementService.Changed += OnTimelinePlacementChanged;
             
             var lineProvider = _logModelFacade.LineProvider;
             var lineParser = _logModelFacade.LineParser;
@@ -178,6 +182,13 @@ namespace LogGrokCore
         }
 
         public TimeRangeFilterViewModel TimeRangeFilter { get; }
+
+        public Dock TimelineDock =>
+            _timelinePlacementService.IsAtTop ? Dock.Top : Dock.Bottom;
+
+        private void OnTimelinePlacementChanged() => InvokePropertyChanged(nameof(TimelineDock));
+
+        public void Dispose() => _timelinePlacementService.Changed -= OnTimelinePlacementChanged;
 
         public bool HaveExclusions => _filterSettings.HaveExclusions;
 

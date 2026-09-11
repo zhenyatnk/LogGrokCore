@@ -29,7 +29,8 @@ namespace LogGrokCore
 
         private readonly Container _container;
         public DocumentContainer(string fileName, ApplicationSettings applicationSettings,
-            SearchAutocompleteCache autocompleteCache, SavedSearchPatternStore savedSearchPatternStore)
+            SearchAutocompleteCache autocompleteCache, SavedSearchPatternStore savedSearchPatternStore,
+            TimelinePlacementService timelinePlacementService)
         {
             _container = new Container(rules =>
                 rules
@@ -41,6 +42,7 @@ namespace LogGrokCore
             
             _container.RegisterInstance(autocompleteCache);
             _container.RegisterInstance(savedSearchPatternStore);
+            _container.RegisterInstance(timelinePlacementService);
             _container.Register<StringPool>(Reuse.Singleton);
             _container.Register<LogModelFacade>(
                 made: Parameters.Of.Type<ILineParser>(serviceKey: ParserType.Full));

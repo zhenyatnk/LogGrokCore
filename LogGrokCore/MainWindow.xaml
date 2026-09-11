@@ -43,6 +43,9 @@
                     </MenuItem.HeaderTemplate>
                     <MenuItem Command="{Binding OpenFileCommand}" Header="Open" />
                     <MenuItem Command="{Binding ToggleThemeCommand}" Header="Toggle theme" />
+                    <MenuItem Header="Timeline at top"
+                              IsCheckable="True"
+                              IsChecked="{Binding IsTimelineAtTop, Mode=TwoWay}" />
                     <Separator />
                     <MenuItem Command="{Binding ExitCommand}" Header="Exit" />
                 </MenuItem>

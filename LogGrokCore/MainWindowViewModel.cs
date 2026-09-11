@@ -23,6 +23,7 @@ namespace LogGrokCore
         private readonly SearchAutocompleteCache _searchAutocompleteCache;
         private readonly SavedSearchPatternStore _savedSearchPatternStore;
         private readonly UiThemeService _themeService;
+        private readonly TimelinePlacementService _timelinePlacementService;
 
         public ObservableCollection<DocumentViewModel> Documents { get; }
 
@@ -43,12 +44,15 @@ namespace LogGrokCore
             SearchAutocompleteCache searchAutocompleteCache, 
             SavedSearchPatternStore savedSearchPatternStore,
             UiThemeService themeService,
+            TimelinePlacementService timelinePlacementService,
             Func<ObservableCollection<DocumentViewModel>, MarkedLinesViewModel> markedLinesViewModelFactory)
         {
             _applicationSettings = applicationSettings;
             _searchAutocompleteCache = searchAutocompleteCache;
             _savedSearchPatternStore = savedSearchPatternStore;
             _themeService = themeService;
+            _timelinePlacementService = timelinePlacementService;
+            _timelinePlacementService.Changed += OnTimelinePlacementChanged;
             Documents = new ObservableCollection<DocumentViewModel>();
             MarkedLinesViewModel = markedLinesViewModelFactory(Documents);
             OpenSettings = new DelegateCommand(() =>
@@ -119,6 +123,17 @@ namespace LogGrokCore
 
         public bool IsDarkTheme => _themeService.IsDark;
 
+        public bool IsTimelineAtTop
+        {
+            get => _timelinePlacementService.IsAtTop;
+            set => _timelinePlacementService.SetAtTop(value);
+        }
+
+        private void OnTimelinePlacementChanged()
+        {
+            InvokePropertyChanged(nameof(IsTimelineAtTop));
+        }
+
         private static readonly AvalonDock.Themes.MetroTheme LightDockTheme = new();
         private static readonly AvalonDock.Themes.Vs2013DarkTheme DarkDockTheme = new();
 
@@ -173,7 +188,7 @@ namespace LogGrokCore
 
         private DocumentViewModel CreateDocument(string fileName)
         {
-            var container = new DocumentContainer(fileName, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore);
+            var container = new DocumentContainer(fileName, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore, _timelinePlacementService);
             var viewModel = container.GetDocumentViewModel();
             Documents.Add(viewModel);
             Documents.CollectionChanged += (o, e) =>

@@ -12,5 +12,6 @@ namespace LogGrokCore
         public ViewBigLine BigLine { get; set; } = ViewBigLine.Break;
         public int BigLineSize { get; set; } = 9728;
 
+        public bool TimelineAtTop { get; set; }
     }
 }

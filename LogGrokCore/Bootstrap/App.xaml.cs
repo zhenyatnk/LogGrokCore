@@ -83,6 +83,7 @@ namespace LogGrokCore.Bootstrap
             container.Register<SearchAutocompleteCache>(Reuse.Singleton); 
             container.Register<SavedSearchPatternStore>(Reuse.Singleton);
             container.Register<UiThemeService>(Reuse.Singleton);
+            container.Register<TimelinePlacementService>(Reuse.Singleton);
             container.Register<MarkedLinesViewModel>();
             container.Register<MainWindow>();
         }
