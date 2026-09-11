@@ -88,10 +88,7 @@ namespace LogGrokCore.Data.Index
 
                 for (var i = 0; i < _componentCount; i++)
                 {
-                    foreach (var ch in meta.GetComponent(dataSpan, i))
-                    {
-                        result = result * 31 + ch.GetHashCode();
-                    }
+                    result = result * 31 + string.GetHashCode(meta.GetComponent(dataSpan, i));
                 }
 
                 return result;
