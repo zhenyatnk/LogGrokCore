@@ -10,10 +10,11 @@ namespace LogGrokCore.Data.IndexTree
         private readonly List<T> _storage;
         private readonly int _firstValueIndex;
         private const int LeafCapacity = 1024;
+        private const int InitialLeafCapacity = 16;
 
         public SimpleLeaf(T firstValue, int valueIndex)
         {
-            _storage = new List<T>(LeafCapacity) {firstValue};
+            _storage = new List<T>(InitialLeafCapacity) {firstValue};
             _firstValueIndex = valueIndex;
         }
 

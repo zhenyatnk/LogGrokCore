@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using LogGrokCore.Data.IndexTree;
 
 namespace LogGrokCore.Data.Index;
@@ -36,7 +37,6 @@ public class Indexer : IndexerBase
         : base(new ConcurrentDictionary<IndexKey, IndexKeyNum>(), 
             new ConcurrentDictionary<IndexKeyNum, IndexKey>())
     {
-        _keyNumbersValueFactory =  KeyNumbersValueFactory;
     }
 
     public SubIndexer CreateSubIndexer()
@@ -44,22 +44,10 @@ public class Indexer : IndexerBase
         return new SubIndexer(KeysToNumbers, NumbersToKeys);
     }
 
-    private IndexKeyNum KeyNumbersValueFactory(IndexKey indexKey)
-    {
-        indexKey.MakeLocalCopy();
-        _currentCount++;
-        return new IndexKeyNum { KeyNum = _currentCount };
-    }
-
-    private readonly Func<IndexKey, IndexKeyNum> _keyNumbersValueFactory;
-
     public void Add(IndexKey key, int lineNumber)
     {
-        var keyCount = _currentCount;
-        var keyNumber = KeysToNumbers.GetOrAdd(key, _keyNumbersValueFactory);
-        var haveNewKey = _currentCount > keyCount;
-        if (haveNewKey)
-            NumbersToKeys.TryAdd(keyNumber, key);
+        if (!KeysToNumbers.TryGetValue(key, out var keyNumber))
+            keyNumber = AddNewKey(key);
 
         _lineAndKeyIndex.Add(keyNumber);
             
@@ -67,9 +55,24 @@ public class Indexer : IndexerBase
             
         index.Add(lineNumber);
         CountIndex.Add(lineNumber, Indices);
+    }
 
-        if (haveNewKey)
-            UpdateComponents(key);
+    private IndexKeyNum AddNewKey(IndexKey key)
+    {
+        var localKey = key.MakeLocalCopy();
+        var keyNumber = new IndexKeyNum { KeyNum = Interlocked.Increment(ref _currentCount) };
+        if (KeysToNumbers.TryAdd(localKey, keyNumber))
+        {
+            NumbersToKeys.TryAdd(keyNumber, localKey);
+            UpdateComponents(localKey);
+            return keyNumber;
+        }
+
+        if (KeysToNumbers.TryGetValue(localKey, out var existing))
+            return existing;
+
+        NumbersToKeys.TryAdd(keyNumber, localKey);
+        return keyNumber;
     }
 
     private class ComponentComparer : IEqualityComparer<IndexKey>
@@ -78,8 +81,7 @@ public class Indexer : IndexerBase
 
         public ComponentComparer(int index) => _index = index;
 
-        public bool Equals(IndexKey? x, IndexKey? y) =>
-            x != null && y != null &&
+        public bool Equals(IndexKey x, IndexKey y) =>
             x.GetComponent(_index).SequenceEqual(y.GetComponent(_index));
 
         public int GetHashCode(IndexKey obj) => string.GetHashCode(obj.GetComponent(_index));

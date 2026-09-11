@@ -5,36 +5,45 @@ using LogGrokCore.Data.Monikers;
 
 namespace LogGrokCore.Data.Index
 {
-    public class IndexKey : IEquatable<IndexKey>
+    public readonly struct IndexKey : IEquatable<IndexKey>
     {
-        private string _buffer;
-        private int _start;
+        private readonly string _buffer;
+        private readonly int _start;
         private readonly int _componentCount;
-        private bool _hasLocalBuffer; 
+        private readonly bool _hasLocalBuffer;
 
         public IndexKey(string buffer, int start, int componentCount)
         {
             _buffer = buffer;
             _start = start;
             _componentCount = componentCount;
+            _hasLocalBuffer = false;
+        }
+
+        private IndexKey(string buffer, int componentCount, bool hasLocalBuffer)
+        {
+            _buffer = buffer;
+            _start = 0;
+            _componentCount = componentCount;
+            _hasLocalBuffer = hasLocalBuffer;
         }
 
         public int ComponentCount => _componentCount;
 
         public bool HasLocalBuffer => _hasLocalBuffer;
-        
-        public unsafe void MakeLocalCopy()
+
+        public unsafe IndexKey MakeLocalCopy()
         {
             var bufferSpan = _buffer.AsSpan(_start);
+            string local;
             fixed (char* start = bufferSpan)
             {
-                var meta =  LineMetaInformation.Get(start, _componentCount);
+                var meta = LineMetaInformation.Get(start, _componentCount);
                 var size = meta.TotalSizeWithPayloadCharsAligned;
-                _buffer = new string(start, 0, size);
-                _start = 0;
+                local = new string(start, 0, size);
             }
 
-            _hasLocalBuffer = true;
+            return new IndexKey(local, _componentCount, true);
         }
 
         public ReadOnlySpan<char> GetComponent(int index)
@@ -45,11 +54,8 @@ namespace LogGrokCore.Data.Index
             return meta.GetComponent(dataSpan, index);
         }
 
-        public bool Equals(IndexKey? other)
+        public bool Equals(IndexKey other)
         {
-            if (other == null)
-                return false;
-            
             var dataSpan = GetDataSpan();
             var meta = GetComponentsMeta();
 
