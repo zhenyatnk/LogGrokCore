@@ -58,7 +58,7 @@ namespace LogGrokCore
             var headerLength = (int)offset;
             using var stream = _logFile.Open();
             var buffer = new byte[headerLength];
-            stream.Read(buffer.AsSpan());
+            stream.ReadExactly(buffer.AsSpan());
             var headerString = _logFile.Encoding.GetString(buffer).TrimEnd();
             return new ItemViewModel[] {new LogHeaderViewModel(headerString)};
         }

@@ -35,7 +35,7 @@ namespace LogGrokCore.Data
 
             using var stream = _streamFactory();
             stream.Seek(startOffset, SeekOrigin.Begin);
-            stream.Read(span);
+            stream.ReadExactly(span);
 
             using var poolOwner = MemoryPool<(long, int)>.Shared.Rent(count);
             var lineIndices = poolOwner.Memory.Span.Slice(0, count);

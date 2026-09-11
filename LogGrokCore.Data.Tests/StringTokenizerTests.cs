@@ -12,8 +12,8 @@ public class StringTokenizerTests
         var source = "a\r\nb";
         var tokens = source.Tokenize().ToList();
         Assert.AreEqual(2, tokens.Count);
-        Assert.AreEqual(tokens[0].ToString(), "a");
-        Assert.AreEqual(tokens[1].ToString(), "b");
+        Assert.AreEqual("a", tokens[0].ToString());
+        Assert.AreEqual("b", tokens[1].ToString());
     }
     
     [TestMethod]
@@ -22,7 +22,7 @@ public class StringTokenizerTests
         var source = "a\r\nb\r\n";
         var tokens = source.Tokenize().ToList();
         Assert.AreEqual(2, tokens.Count);
-        Assert.AreEqual(tokens[0].ToString(), "a");
-        Assert.AreEqual(tokens[1].ToString(), "b");
+        Assert.AreEqual("a", tokens[0].ToString());
+        Assert.AreEqual("b", tokens[1].ToString());
     }
 }

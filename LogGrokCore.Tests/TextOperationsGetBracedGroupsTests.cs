@@ -7,7 +7,7 @@ namespace LogGrokCore.Tests;
 [TestClass]
 public class TextOperationsGetBracedGroupsTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("{}", 0, 2)]
     [DataRow("{{}}", 0, 4)]
     [DataRow("{}{", 0, 2)]
@@ -25,7 +25,7 @@ public class TextOperationsGetBracedGroupsTests
         Assert.AreEqual(length, actualLength);
     }
     
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("{}{}", 0, 2, 2, 2)]
     [DataRow("{}AAA{}", 0, 2, 5, 2)]
     public void TestGetBracedGroups_TwoGroups(string source, int start1, int length1, int start2, int length2)
@@ -42,7 +42,7 @@ public class TextOperationsGetBracedGroupsTests
         Assert.AreEqual(length2, actualLength2);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("{{}{}")]
     [DataRow("{AAA{}")]
     [DataRow("")]
