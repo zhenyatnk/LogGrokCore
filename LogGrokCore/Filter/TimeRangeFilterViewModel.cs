@@ -23,6 +23,8 @@ namespace LogGrokCore.Filter
             ResetCommand = new DelegateCommand(Reset);
         }
 
+        public TimeIndex TimeIndex => _timeIndex;
+
         public bool IsAvailable
         {
             get => _isAvailable;

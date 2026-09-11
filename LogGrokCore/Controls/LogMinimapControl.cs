@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using LogGrokCore.Data;
 
 namespace LogGrokCore.Controls
 {
@@ -64,6 +65,10 @@ namespace LogGrokCore.Controls
             nameof(IsRangeEnabled), typeof(bool), typeof(LogMinimapControl),
             new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
 
+        public static readonly DependencyProperty TimeIndexProperty = DependencyProperty.Register(
+            nameof(TimeIndex), typeof(TimeIndex), typeof(LogMinimapControl),
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+
         public static readonly DependencyProperty MarkerBrushProperty = DependencyProperty.Register(
             nameof(MarkerBrush), typeof(Brush), typeof(LogMinimapControl),
             new FrameworkPropertyMetadata(Brushes.OrangeRed, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -120,7 +125,7 @@ namespace LogGrokCore.Controls
         private const double LabelFontSize = 11.0;
         private const double HandleHitTolerance = 6.0;
         private const double HandleWidth = 5.0;
-        private const double LabelPadding = 3.0;
+        private const double EdgeLabelPadding = 8.0;
 
         private INotifyCollectionChanged? _observableMarkers;
         private INotifyCollectionChanged? _observableMatchBuckets;
@@ -128,8 +133,8 @@ namespace LogGrokCore.Controls
         private DragHandle _dragHandle;
         private double _dragLowerValue;
         private double _dragUpperValue;
-        private double _dragStartLower;
-        private double _dragStartUpper;
+        private int _dragStartLine;
+        private int _dragEndLine;
         private double _dragStartX;
 
         public IEnumerable? Markers
@@ -196,6 +201,12 @@ namespace LogGrokCore.Controls
         {
             get => (bool)GetValue(IsRangeEnabledProperty);
             set => SetValue(IsRangeEnabledProperty, value);
+        }
+
+        public TimeIndex? TimeIndex
+        {
+            get => (TimeIndex?)GetValue(TimeIndexProperty);
+            set => SetValue(TimeIndexProperty, value);
         }
 
         public Brush MarkerBrush
@@ -305,8 +316,9 @@ namespace LogGrokCore.Controls
             var upperX = width;
             if (rangeActive)
             {
-                lowerX = MapToX(GetEffectiveLower());
-                upperX = MapToX(GetEffectiveUpper());
+                var (startLine, endLine) = GetRangeLines(GetEffectiveLower(), GetEffectiveUpper());
+                lowerX = CenterOf(startLine, ItemCount, width);
+                upperX = CenterOf(endLine, ItemCount, width);
                 DrawSelection(drawingContext, width, height, lowerX, upperX);
             }
 
@@ -449,13 +461,13 @@ namespace LogGrokCore.Controls
             var foreground = DurationForeground;
             var background = DurationBackground;
 
-            DrawLabel(drawingContext, MinText, foreground, background, LabelPadding, height, FlowDirection.LeftToRight);
+            DrawLabel(drawingContext, MinText, foreground, background, EdgeLabelPadding, height, FlowDirection.LeftToRight);
 
             var maxText = CreateText(MaxText, foreground);
             if (maxText != null)
             {
                 DrawLabel(drawingContext, maxText, background,
-                    Math.Max(LabelPadding, width - maxText.Width - LabelPadding), height);
+                    Math.Max(EdgeLabelPadding, width - maxText.Width - EdgeLabelPadding), height);
             }
 
             var duration = GetDurationText();
@@ -465,7 +477,7 @@ namespace LogGrokCore.Controls
                 if (text != null)
                 {
                     var center = (lowerX + upperX) / 2;
-                    var left = Math.Clamp(center - text.Width / 2, LabelPadding, Math.Max(LabelPadding, width - text.Width - LabelPadding));
+                    var left = Math.Clamp(center - text.Width / 2, EdgeLabelPadding, Math.Max(EdgeLabelPadding, width - text.Width - EdgeLabelPadding));
                     DrawLabel(drawingContext, text, background, left, height);
                 }
             }
@@ -536,14 +548,15 @@ namespace LogGrokCore.Controls
                 }
 
                 var positionX = e.GetPosition(this).X;
-                var lowerX = MapToX(GetEffectiveLower());
-                var upperX = MapToX(GetEffectiveUpper());
+                var (startLine, endLine) = GetRangeLines(GetEffectiveLower(), GetEffectiveUpper());
+                var lowerX = CenterOf(startLine, ItemCount, ActualWidth);
+                var upperX = CenterOf(endLine, ItemCount, ActualWidth);
 
                 if (IsControlPressed() && positionX > lowerX && positionX < upperX)
                 {
                     _dragStartX = positionX;
-                    _dragStartLower = LowerValue;
-                    _dragStartUpper = UpperValue;
+                    _dragStartLine = startLine;
+                    _dragEndLine = endLine;
                     _dragLowerValue = LowerValue;
                     _dragUpperValue = UpperValue;
                     _dragHandle = DragHandle.Move;
@@ -583,8 +596,9 @@ namespace LogGrokCore.Controls
             {
                 if (IsRangeActive())
                 {
-                    var lowerX = MapToX(GetEffectiveLower());
-                    var upperX = MapToX(GetEffectiveUpper());
+                    var (startLine, endLine) = GetRangeLines(GetEffectiveLower(), GetEffectiveUpper());
+                    var lowerX = CenterOf(startLine, ItemCount, width);
+                    var upperX = CenterOf(endLine, ItemCount, width);
                     if (IsControlPressed() && positionX > lowerX && positionX < upperX)
                         Cursor = Cursors.SizeAll;
                     else if (Math.Abs(positionX - lowerX) <= HandleHitTolerance || Math.Abs(positionX - upperX) <= HandleHitTolerance)
@@ -596,28 +610,79 @@ namespace LogGrokCore.Controls
                 return;
             }
 
-            var range = Maximum - Minimum;
-            if (range <= 0)
+            var count = ItemCount;
+            if (count <= 0)
                 return;
 
             if (_dragHandle == DragHandle.Move)
             {
-                var delta = (positionX - _dragStartX) / ActualWidth * range;
-                var selectionWidth = _dragStartUpper - _dragStartLower;
-                var newLower = Math.Clamp(_dragStartLower + delta, Minimum, Math.Max(Minimum, Maximum - selectionWidth));
-                _dragLowerValue = newLower;
-                _dragUpperValue = newLower + selectionWidth;
+                var deltaLines = (positionX - _dragStartX) / ActualWidth * count;
+                var selectionLines = _dragEndLine - _dragStartLine;
+                var newLowerLine = (int)Math.Clamp(
+                    Math.Round(_dragStartLine + deltaLines), 0, Math.Max(0, count - selectionLines));
+                var newUpperLine = newLowerLine + selectionLines;
+                _dragLowerValue = LineToValue(newLowerLine);
+                _dragUpperValue = LineToValue(newUpperLine);
                 InvalidateVisual();
                 return;
             }
 
-            var value = MapFromX(positionX);
+            var value = LineToValue(XToLine(positionX));
             if (_dragHandle == DragHandle.Lower)
-                _dragLowerValue = Math.Clamp(value, Minimum, _dragUpperValue - 1);
+                _dragLowerValue = Math.Clamp(value, Minimum, Math.Max(Minimum, _dragUpperValue - 1));
             else
-                _dragUpperValue = Math.Clamp(value, _dragLowerValue + 1, Maximum);
+                _dragUpperValue = Math.Clamp(value, Math.Min(Maximum, _dragLowerValue + 1), Maximum);
 
             InvalidateVisual();
+        }
+
+        private (int startLine, int endLine) GetRangeLines(double lower, double upper)
+        {
+            var count = ItemCount;
+            if (count <= 0)
+                return (0, 0);
+
+            var timeIndex = TimeIndex;
+            if (timeIndex is { HasTime: true } &&
+                timeIndex.FindLineRange((long)lower, (long)upper) is { } range)
+            {
+                var startLine = Math.Clamp(range.StartLine, 0, count);
+                var endLine = Math.Clamp(range.EndLine, startLine, count);
+                return (startLine, endLine);
+            }
+
+            var rangeTicks = Maximum - Minimum;
+            if (rangeTicks <= 0)
+                return (0, count);
+
+            var fallbackStart = (int)Math.Clamp((lower - Minimum) / rangeTicks * count, 0, count);
+            var fallbackEnd = (int)Math.Clamp((upper - Minimum) / rangeTicks * count, fallbackStart, count);
+            return (fallbackStart, fallbackEnd);
+        }
+
+        private double LineToValue(int line)
+        {
+            var count = ItemCount;
+            if (count <= 0)
+                return Minimum;
+
+            if (line >= count)
+                return Maximum;
+
+            var timeIndex = TimeIndex;
+            if (timeIndex is { HasTime: true } && timeIndex.Count > 0)
+                return timeIndex.GetTicksAt(Math.Clamp(line, 0, timeIndex.Count - 1));
+
+            return Minimum + (double)line / count * (Maximum - Minimum);
+        }
+
+        private int XToLine(double x)
+        {
+            var count = ItemCount;
+            if (count <= 0 || ActualWidth <= 0)
+                return 0;
+
+            return (int)Math.Clamp(Math.Floor(x / ActualWidth * count), 0, count - 1);
         }
 
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
@@ -701,24 +766,6 @@ namespace LogGrokCore.Controls
 
         private double GetEffectiveUpper() =>
             _dragHandle is DragHandle.Upper or DragHandle.Move ? _dragUpperValue : UpperValue;
-
-        private double MapToX(double value)
-        {
-            var range = Maximum - Minimum;
-            if (range <= 0)
-                return 0;
-
-            return Math.Clamp((value - Minimum) / range * ActualWidth, 0, ActualWidth);
-        }
-
-        private double MapFromX(double x)
-        {
-            var width = ActualWidth;
-            if (width <= 0)
-                return Minimum;
-
-            return Minimum + Math.Clamp(x / width, 0, 1) * (Maximum - Minimum);
-        }
 
         private string GetDurationText()
         {

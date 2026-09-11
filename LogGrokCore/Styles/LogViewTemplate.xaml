@@ -83,6 +83,7 @@
                                              Markers="{Binding Markers}"
                                              MatchBuckets="{Binding SearchMatches}"
                                              IsRangeEnabled="{Binding TimeRangeFilter.IsAvailable}"
+                                             TimeIndex="{Binding TimeRangeFilter.TimeIndex}"
                                              Minimum="{Binding TimeRangeFilter.Minimum,
                                                         Mode=OneWay}"
                                              Maximum="{Binding TimeRangeFilter.Maximum,
@@ -105,7 +106,7 @@
                                              DimBrush="#40000000"
                                              HandleBrush="#FF007ACC"
                                              DurationForeground="{DynamicResource MahApps.Brushes.ThemeForeground}"
-                                             DurationBackground="{DynamicResource MahApps.Brushes.ThemeBackground}"
+                                             DurationBackground="Transparent"
                                              NavigateCommand="{Binding NavigateToMarkerCommand}"
                                              ToolTip="Timeline: drag the handles to filter by time; Ctrl+drag the selection to move it; click to navigate" />
             <Grid Grid.Row="3">
