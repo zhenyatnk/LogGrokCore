@@ -45,6 +45,11 @@ Key areas in `LogGrokCore.Data`: `Loader`/`LoaderImpl` (buffered line-aware
 reader), `RegexBasedLineParser`, `IndexTree`/`LineIndex`/`SearchLineIndex`,
 `Search`/`Pipeline`, `Virtualization`.
 
+The UI layer uses **WPF-UI 4.3.0** (Fluent controls/theming) and
+**AvalonDock 5** for docking. Branding/window title is **LogGrok 2.1**.
+JSON folding lives in `Controls/TextRender` (`TextView`,
+`TextViewSharedFoldingState`, `CollapsibleRegionsMachine`, `FoldingManager`).
+
 ## Conventions
 
 - `LangVersion=latest`, `Nullable=enable`. Prefer file-scoped namespaces.
@@ -60,6 +65,24 @@ reader), `RegexBasedLineParser`, `IndexTree`/`LineIndex`/`SearchLineIndex`,
   `AvalonDock.Serializer.Xml` (not `AvalonDock.Layout.Serialization`).
 - **NLog 6**: `nlog.config` must stay compatible with NLog 6 — `concurrentWrites`
   was removed, and `${threadid}` accepts no properties.
+- **WPF-UI theming**: switch themes through `ApplicationThemeManager` /
+  `Theming/UiThemeService.cs`. Reference `DynamicResource` brushes
+  (`ApplicationBackgroundBrush`, `TextFillColorPrimaryBrush`,
+  `ControlStrokeColorDefaultBrush`, …) instead of hard-coded colors so both
+  themes work. WPF-UI ships *keyed* styles (e.g. `UiGridViewColumnHeaderStyle`),
+  so implicit styles are not always picked up — define overrides explicitly in
+  `Bootstrap/App.xaml`.
+- **AvalonDock themes**: the main `DockingManager` uses `Vs2013LightTheme` /
+  `Vs2013DarkTheme`, but the search pane's inner `DockingManager` merges the
+  light `AvalonDock.Themes.Metro` theme. Metro keys (e.g.
+  `AvalonDock_ThemeMetro_BaseColor5`) therefore sometimes need theme-aware
+  overrides in `Styles/DocumentSearchTemplate.xaml`.
+- **JSON folding state** is shared per opened document: `DocumentContainer`
+  registers one `TextViewSharedFoldingState` (exposed as `FoldingState` on
+  `LogViewModel` / `SearchDocumentViewModel` / `DocumentViewModel`) and the
+  templates bind it via `textRender:TextView.SharedFoldingState`. The marked-lines
+  view must use `Document.FoldingState` and the same `TextModel.UniqueId` as the
+  grid's JSON component, otherwise expansion falls out of sync.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrok2\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.
