@@ -11,6 +11,7 @@ using System.Windows.Input;
 using LogGrokCore.Controls;
 using LogGrokCore.Controls.GridView;
 using LogGrokCore.Controls.ListControls;
+using LogGrokCore.Controls.TextRender;
 using LogGrokCore.Data;
 using LogGrokCore.Filter;
 
@@ -40,10 +41,12 @@ namespace LogGrokCore
             ColumnSettings columnSettings,
             TimeRangeFilterViewModel timeRangeFilter,
             Selection markedLines,
-            TimelinePlacementService timelinePlacementService)
+            TimelinePlacementService timelinePlacementService,
+            TextViewSharedFoldingState foldingState)
         {
             _logModelFacade = logModelFacade;
             _filterSettings = filterSettings;
+            FoldingState = foldingState;
             TimeRangeFilter = timeRangeFilter;
             _markedLines = markedLines;
             _timelinePlacementService = timelinePlacementService;
@@ -230,6 +233,8 @@ namespace LogGrokCore
         {
             get;
         }
+
+        public TextViewSharedFoldingState FoldingState { get; }
 
         public int CurrentItemIndex
         {

@@ -2,16 +2,14 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                     xmlns:local="clr-namespace:LogGrokCore"
                     xmlns:localControls="clr-namespace:LogGrokCore.Controls"
-                    xmlns:mahapps="http://metro.mahapps.com/winfx/xaml/controls"
                     xmlns:listControls="clr-namespace:LogGrokCore.Controls.ListControls"
                     xmlns:virtualizingStackPanel1="clr-namespace:LogGrokCore.Controls.ListControls.VirtualizingStackPanel"
                     xmlns:textRender="clr-namespace:LogGrokCore.Controls.TextRender"
                     mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.contextmenu.xaml" />
         <ResourceDictionary Source="ListViewItemStyle.xaml" />
         <ResourceDictionary Source="LogViewContextMenu.xaml"/>
     </ResourceDictionary.MergedDictionaries>
@@ -39,41 +37,40 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Margin="2"
-                                    Padding="6,1"
-                                    Background="#22808080"
-                                    BorderBrush="#40808080"
+                                    Padding="8,2"
+                                    Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8">
+                                    CornerRadius="12">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock VerticalAlignment="Center"
                                                FontSize="11"
                                                Text="{Binding DisplayText}" />
-                                    <Button Margin="4,0,0,0"
-                                            Padding="2,0"
-                                            Command="{Binding RemoveCommand}"
-                                            Content="&#x2715;"
-                                            FontSize="10"
-                                            Style="{StaticResource MahApps.Styles.Button.Chromeless}"
-                                            ToolTip="Remove filter" />
+                                    <ui:Button Margin="4,0,0,0"
+                                               Padding="2"
+                                               Appearance="Transparent"
+                                               Command="{Binding RemoveCommand}"
+                                               Content="&#x2715;"
+                                               FontSize="10"
+                                               ToolTip="Remove filter" />
                                 </StackPanel>
                             </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <Button Margin="4,2,0,2"
-                        Padding="6,1"
-                        Command="{Binding ClearExclusionsCommand}"
-                        Content="Clear all"
-                        FontSize="11"
-                        Style="{StaticResource MahApps.Styles.Button.Chromeless}"
-                        ToolTip="Clear all filters" />
+                <ui:Button Margin="4,2,0,2"
+                           Padding="8,2"
+                           Appearance="Transparent"
+                           Command="{Binding ClearExclusionsCommand}"
+                           Content="Clear all"
+                           FontSize="11"
+                           ToolTip="Clear all filters" />
             </StackPanel>
-            <mahapps:MetroProgressBar
-                Grid.Row="1"
-                Height="3"
-                HorizontalAlignment="Stretch"
-                Value="{Binding Progress}"
-                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <ProgressBar Grid.Row="1"
+                         Height="3"
+                         HorizontalAlignment="Stretch"
+                         Value="{Binding Progress}"
+                         Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" />
             <DockPanel Grid.Row="2" LastChildFill="True">
             <localControls:LogMinimapControl DockPanel.Dock="{Binding TimelineDock,
                                                                FallbackValue=Bottom}"
@@ -104,16 +101,18 @@
                                              MarkerBrush="#FFE81123"
                                              MatchBrush="#A0F2A900"
                                              DayBoundaryBrush="#FF8E8E8E"
-                                             MinimapBackground="{DynamicResource MahApps.Brushes.Control.Background}"
+                                             MinimapBackground="{DynamicResource ControlFillColorDefaultBrush}"
                                              SelectionBrush="#33007ACC"
                                              DimBrush="#40000000"
                                              HandleBrush="#FF007ACC"
-                                             DurationForeground="{DynamicResource MahApps.Brushes.ThemeForeground}"
+                                             DurationForeground="{DynamicResource TextFillColorPrimaryBrush}"
                                              DurationBackground="Transparent"
                                              NavigateCommand="{Binding NavigateToMarkerCommand}"
                                              ToolTip="Timeline: drag the handles to filter by time (or line numbers when no time is available); Ctrl+drag the selection to move it; click to navigate" />
             <Grid>
             <listControls:ListView ItemsSource="{Binding Lines}"
+                                    Background="{DynamicResource ApplicationBackgroundBrush}"
+                                    BorderThickness="0"
                                     SelectionMode="Extended"
                                     ReadonlySelectedItems="{Binding SelectedItems,
                                                             Mode=OneWayToSource}"
@@ -127,11 +126,10 @@
                                         "{Binding NavigateToLineRequest}"
                                     localControls:NavigateToLineBehavior.ChangeCurrentItem="True"
                                     FontFamily="{StaticResource JetBrainsMono}"
+                                    FontSize="12"
                                     ColumnSettings="{Binding ColumnSettings}"
+                                    textRender:TextView.SharedFoldingState="{Binding FoldingState}"
                                     x:Name="ItemsListView">
-                <textRender:TextView.SharedFoldingState>
-                    <textRender:TextViewSharedFoldingState/>
-                </textRender:TextView.SharedFoldingState>
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <virtualizingStackPanel1:VirtualizingStackPanel

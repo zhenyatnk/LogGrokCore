@@ -50,6 +50,19 @@ namespace LogGrokCore.Tests
         }
 
         [TestMethod]
+        public void WholeLineAndMessageComponentHaveSameCollapsibleStarts()
+        {
+            const string prefix = "2024-01-01 10:00:00 INF app ";
+            const string json = "{\"a\":{\"b\":1,\"c\":2}}";
+            var whole = new TextModel(1, prefix + json);
+            var component = new TextModel(2, json);
+
+            CollectionAssert.AreEqual(
+                whole.CollapsibleRanges!.Select(r => r.start).ToList(),
+                component.CollapsibleRanges!.Select(r => r.start).ToList());
+        }
+
+        [TestMethod]
         public void NullFoldingStateKeepsExpandedJson()
         {
             var model = new TextModel(1, Json);

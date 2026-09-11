@@ -10,6 +10,7 @@ using System.Windows.Input;
 using LogGrokCore.Controls;
 using LogGrokCore.Controls.GridView;
 using LogGrokCore.Controls.ListControls;
+using LogGrokCore.Controls.TextRender;
 using LogGrokCore.Data;
 using LogGrokCore.Data.Index;
 using LogGrokCore.Data.Search;
@@ -51,10 +52,12 @@ namespace LogGrokCore.Search
             Selection markedLines,
             ColumnSettings columnSettings,
             TransformationPerformer transformationPerformer,
-            TimeIndex timeIndex)
+            TimeIndex timeIndex,
+            TextViewSharedFoldingState foldingState)
         {
             
             _viewFactory = viewFactory;
+            FoldingState = foldingState;
 
             _logModelFacade = logModelFacade;
             _timeIndex = timeIndex;
@@ -159,6 +162,8 @@ namespace LogGrokCore.Search
         }
 
         public ColumnSettings ColumnSettings { get; }
+        
+        public TextViewSharedFoldingState FoldingState { get; }
         
         public string Title => $"{SearchPattern.Pattern} ({Lines.Count})";
 

@@ -15,7 +15,7 @@ namespace LogGrokCore.MarkedLines
         {
             Document = document;
 
-            var uniqueId = HashCode.Combine(document, lineNumber);
+            var uniqueId = HashCode.Combine(lineNumber, document.GetFoldingComponentIndex(text));
             Text = new LinePartViewModel(uniqueId, text);
             ColorSettings = document.ColorSettings;
         }
@@ -24,12 +24,13 @@ namespace LogGrokCore.MarkedLines
 
         public override string GetDisplayText(TextViewSharedFoldingState? foldingState)
         {
+            var state = Document.FoldingState;
             var textModel = Text.TextModel;
-            if (foldingState == null || textModel.CollapsibleRanges == null)
+            if (textModel.CollapsibleRanges == null)
                 return textModel.GetDisplayedText(null);
 
-            var collapsedLines = foldingState[textModel.UniqueId]
-                                 ?? foldingState.GetDefaultSettings(textModel.CollapsibleRanges, textModel.Count);
+            var collapsedLines = state[textModel.UniqueId]
+                                 ?? state.GetDefaultSettings(textModel.CollapsibleRanges, textModel.Count);
 
             return textModel.GetDisplayedText(collapsedLines);
         }

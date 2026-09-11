@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using LogGrokCore.Colors;
+using Wpf.Ui.Appearance;
 
 namespace LogGrokCore.Controls.ListControls
 {
@@ -20,6 +22,9 @@ namespace LogGrokCore.Controls.ListControls
     
     public class BaseLogListViewItem : ListViewItem
     {
+        private static readonly List<WeakReference<BaseLogListViewItem>> RegisteredItems = new();
+        private static bool _themeSubscribed;
+
         private readonly ItemsControl _itemsControl;
 
         private Brush? _overrideForeground;
@@ -33,6 +38,27 @@ namespace LogGrokCore.Controls.ListControls
             {
                 UpdateIsCurrentProperty();
             };
+
+            RegisteredItems.Add(new WeakReference<BaseLogListViewItem>(this));
+            EnsureThemeSubscription();
+        }
+
+        private static void EnsureThemeSubscription()
+        {
+            if (_themeSubscribed) return;
+            _themeSubscribed = true;
+            ApplicationThemeManager.Changed += OnApplicationThemeChanged;
+        }
+
+        private static void OnApplicationThemeChanged(ApplicationTheme theme, Color accent)
+        {
+            for (var i = RegisteredItems.Count - 1; i >= 0; i--)
+            {
+                if (RegisteredItems[i].TryGetTarget(out var item))
+                    item.UpdateColorOverride();
+                else
+                    RegisteredItems.RemoveAt(i);
+            }
         }
 
         public static readonly DependencyProperty OnItemActivatedCommandProperty = DependencyProperty.RegisterAttached(
@@ -134,23 +160,30 @@ namespace LogGrokCore.Controls.ListControls
         {
             base.OnContentChanged(oldContent, newContent);
             UpdateIsCurrentProperty();
+            UpdateColorOverride();
+        }
+
+        private void UpdateColorOverride()
+        {
             var colorSettings = ColorSettings.GetColorSettings(this);
-            if (oldContent == newContent || colorSettings == null) return;
-            var text = newContent?.ToString();
-            if (text == null) return;
+            var text = Content?.ToString();
             ColorSettings.ColorRule? rule = null;
-            // ReSharper disable once ForCanBeConvertedToForeach
-            // ReSharper disable once LoopCanBeConvertedToQuery
-            for (var i = 0; i < colorSettings.Rules.Count; i++)
+            if (colorSettings != null && text != null)
             {
-                var colorSettingsRule = colorSettings.Rules[i];
-                if (!colorSettingsRule.IsMatch(text)) continue;
-                rule = colorSettingsRule;
-                break;
+                // ReSharper disable once ForCanBeConvertedToForeach
+                // ReSharper disable once LoopCanBeConvertedToQuery
+                for (var i = 0; i < colorSettings.Rules.Count; i++)
+                {
+                    var colorSettingsRule = colorSettings.Rules[i];
+                    if (!colorSettingsRule.IsMatch(text)) continue;
+                    rule = colorSettingsRule;
+                    break;
+                }
             }
 
-            _overrideForeground = rule?.Foreground;
-            _overrideBackground = rule?.Background;
+            var isDark = ApplicationThemeManager.GetAppTheme() == ApplicationTheme.Dark;
+            _overrideForeground = rule?.GetForegroundBrush(isDark);
+            _overrideBackground = rule?.GetBackgroundBrush(isDark);
             CoerceValue(ForegroundProperty);
             CoerceValue(BackgroundProperty);
         }

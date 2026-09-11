@@ -1,19 +1,17 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                     xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
                     xmlns:filterPopup="clr-namespace:LogGrokCore.Controls.FilterPopup"
                     xmlns:local="clr-namespace:LogGrokCore.Filter"
                     xmlns:logGrokCore="clr-namespace:LogGrokCore"
                     xmlns:controls="clr-namespace:LogGrokCore.Controls">
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/controls.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/styles/fonts.xaml"/>
         <ResourceDictionary Source="ResizablePopupContent.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
     <DataTemplate x:Key="FilterPopup" DataType="local:FilterViewModel">
-        <filterPopup:ResizablePopup Width="250"
+        <filterPopup:ResizablePopup Width="270"
                                     Height="300"
                                     MinWidth="200"
                                     MinHeight="200"
@@ -31,8 +29,8 @@
                             Command="{x:Static logGrokCore:RoutedCommands.Cancel}"
                             CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Popup}}" />
             </filterPopup:ResizablePopup.InputBindings>
-            <Border BorderBrush="{DynamicResource MahApps.Brushes.Control.Border}" BorderThickness="1">
-                <Grid Background="{DynamicResource MahApps.Brushes.ThemeBackground}">
+            <Border BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1">
+                <Grid Background="{DynamicResource ApplicationBackgroundBrush}">
                     <AdornerDecorator>
                         <Grid Margin="4">
                             <Grid.Resources>
@@ -45,83 +43,71 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="FilterTextBox"
-                                     Grid.ColumnSpan="3"
-                                     Margin="10, 10, 10, 0"
+                            <ui:TextBox x:Name="FilterTextBox"
+                                     Grid.Row="0"
+                                     Margin="2,2,2,0"
+                                     FontSize="12"
+                                     ClearButtonEnabled="True"
                                      Text="{Binding TextFilter,
                                                             UpdateSourceTrigger=PropertyChanged}"
+                                     PlaceholderText="Search..."
                                      controls:RoutedCommandBehavior.RoutedCommandToCommandBinding="{controls:RoutedCommandToCommandBinding 
                                                     Command={Binding 
                                                         Source={x:Static filterPopup:TextBoxCommands.Clear}},
-                                                    RoutedCommand={x:Static logGrokCore:RoutedCommands.Cancel}}"
-
-                                     mah:TextBoxHelper.ButtonCommand="{Binding 
-                                                Source={x:Static filterPopup:TextBoxCommands.Clear}}"
-                                     mah:TextBoxHelper.ButtonCommandParameter="{Binding ElementName=FilterTextBox}"
-                                     mah:TextBoxHelper.SelectAllOnFocus="True"
-                                     mah:TextBoxHelper.Watermark="Search...">
-                                <TextBox.InputBindings>
+                                                    RoutedCommand={x:Static logGrokCore:RoutedCommands.Cancel}}">
+                                <ui:TextBox.InputBindings>
                                     <KeyBinding Key="Escape"
                                                 Command="{x:Static logGrokCore:RoutedCommands.Cancel}"
                                                 CommandParameter="{Binding ElementName=FilterTextBox}" />
-                                </TextBox.InputBindings>
-                                <TextBox.Style>
-                                    <Style BasedOn="{StaticResource MahApps.Styles.TextBox}" 
-                                           TargetType="{x:Type TextBox}">
-                                        <Setter Property="mah:TextBoxHelper.ClearTextButton" Value="True" />
-                                        <Style.Triggers>
-                                            <Trigger Property="mah:TextBoxHelper.HasText" Value="False">
-                                                <Setter Property="mah:TextBoxHelper.ClearTextButton" Value="False" />
-                                            </Trigger>
-                                            <Trigger Property="mah:TextBoxHelper.HasText" Value="True">
-                                                <Setter Property="mah:TextBoxHelper.ClearTextButton" Value="True" />
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBox.Style>
-                            </TextBox>
-                            <Button Grid.Row="1"
-                                    Grid.Column="0"
-                                    Margin="10, 10, 5, 0"
-                                    Command="{Binding SelectAllCommand}"
-                                    CommandParameter="{Binding Items,
+                                </ui:TextBox.InputBindings>
+                            </ui:TextBox>
+                            <WrapPanel Grid.Row="1"
+                                       Margin="2,6,2,0"
+                                       Orientation="Horizontal">
+                                <ui:Button Margin="0,0,6,0"
+                                           Padding="8,2"
+                                           FontSize="12"
+                                           Appearance="Secondary"
+                                           Command="{Binding SelectAllCommand}"
+                                           CommandParameter="{Binding Items,
                                                                        ElementName=ListBox}"
-                                    Content="Select All" />
-                            <Button Grid.Row="1"
-                                    Grid.Column="1"
-                                    Margin="10, 10, 5, 0"
-                                    Command="{Binding DeselectAllCommand}"
-                                    CommandParameter="{Binding Items,
+                                           Content="Select All" />
+                                <ui:Button Margin="0,0,6,0"
+                                           Padding="8,2"
+                                           FontSize="12"
+                                           Appearance="Secondary"
+                                           Command="{Binding DeselectAllCommand}"
+                                           CommandParameter="{Binding Items,
                                                                        ElementName=ListBox}"
-                                    Content="Deselect All" />
-                            <Button Grid.Row="2"
-                                    Grid.Column="0"
-                                    Grid.ColumnSpan="2"
-                                    Margin="10, 10, 5, 0"
-                                    Command="{Binding SelectOnlySearchResultsCommand}"
-                                    CommandParameter="{Binding Items,
+                                           Content="Deselect All" />
+                                <ui:Button Padding="8,2"
+                                           FontSize="12"
+                                           Appearance="Secondary"
+                                           Command="{Binding SelectOnlySearchResultsCommand}"
+                                           CommandParameter="{Binding Items,
                                                                        ElementName=ListBox}"
-                                    Content="Select Only Search Results" />
+                                           Content="Search Results Only" />
+                            </WrapPanel>
                             <ListBox x:Name="ListBox"
-                                     Grid.Column="0"
-                                     Grid.Row="3"
-                                     Grid.ColumnSpan="4"
-                                     Margin="10"
-                                     ItemContainerStyle="{StaticResource MahApps.Styles.ListBoxItem}"
+                                     Grid.Row="2"
+                                     Margin="2,6,2,2"
+                                     Background="Transparent"
+                                     BorderThickness="0"
                                      HorizontalContentAlignment="Stretch"
                                      ItemsSource="{Binding 
                                         Source={StaticResource ElementsCollectionViewSource}}"
                                      SelectionMode="Single"
                                      filterPopup:ItemsFilteringBehavior.FilteredProperty="Name"
                                      filterPopup:ItemsFilteringBehavior.TextFilter="{Binding TextFilter}">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="{x:Type ListBoxItem}"
+                                           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                        <Setter Property="Padding" Value="6,1" />
+                                        <Setter Property="Margin" Value="0" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <ContentControl Content="{Binding}">
@@ -130,16 +116,19 @@
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
                                                         </Grid.ColumnDefinitions>
-                                                        <CheckBox
-                                                            Content="{Binding Name}"
-                                                            IsChecked="{Binding IsActive}" />
+                                                        <CheckBox Content="{Binding Name}"
+                                                                  MinWidth="0"
+                                                                  MinHeight="20"
+                                                                  Padding="0"
+                                                                  FontSize="12"
+                                                                  IsChecked="{Binding IsActive}" />
                                                         <TextBlock Grid.Column="1"
-                                                                   Margin="0,0,5,0"
-                                                                   HorizontalAlignment="Right"
+                                                                   Margin="8,0,2,0"
+                                                                   VerticalAlignment="Center"
                                                                    FontStyle="Italic"
-                                                                   Foreground="Gray"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                    Text="{Binding Percent}" />
                                                     </Grid>
                                                 </DataTemplate><!--

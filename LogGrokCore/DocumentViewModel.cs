@@ -7,6 +7,7 @@ using System.Linq;
 using System.Windows.Input;
 using LogGrokCore.Colors;
 using LogGrokCore.Controls;
+using LogGrokCore.Controls.TextRender;
 using LogGrokCore.Data;
 using LogGrokCore.Search;
 
@@ -17,6 +18,7 @@ namespace LogGrokCore
         private readonly Selection _markedLines;
         private bool _isCurrentDocument;
         private readonly LineProvider _lineProvider;
+        private readonly ILineParser _lineParser;
         private readonly TransformationPerformer _transformationPerformer;
         private Stream _fileHolder;
 
@@ -27,7 +29,8 @@ namespace LogGrokCore
             SearchViewModel searchViewModel,
             Selection markedLines,
             ColorSettings colorSettings,
-            TransformationPerformer transformationPerformer)
+            TransformationPerformer transformationPerformer,
+            TextViewSharedFoldingState foldingState)
         {
             var logFileFilePath = logModelFacade.LogFile.FilePath;
             
@@ -38,6 +41,7 @@ namespace LogGrokCore
             LogViewModel = logViewModel;
             SearchViewModel = searchViewModel;
             ColorSettings = colorSettings;
+            FoldingState = foldingState;
             
             SearchViewModel.CurrentLineChanged += lineNumber => NavigateTo(lineNumber);
             SearchViewModel.CurrentSearchChanged += regex => LogViewModel.HighlightRegex = regex;
@@ -48,6 +52,7 @@ namespace LogGrokCore
             _markedLines = markedLines;
             _transformationPerformer = transformationPerformer;
             _lineProvider = lineProvider;
+            _lineParser = logModelFacade.LineParser;
             _markedLines.Changed += () => MarkedLinesChanged?.Invoke();
             _fileHolder = logModelFacade.LogFile.Open();
 
@@ -126,6 +131,27 @@ namespace LogGrokCore
         public SearchViewModel SearchViewModel { get; }
 
         public ColorSettings ColorSettings { get; }
+
+        public TextViewSharedFoldingState FoldingState { get; }
+
+        public int GetFoldingComponentIndex(string transformedText)
+        {
+            var parseResult = _lineParser.Parse(transformedText);
+            var lineMeta = parseResult.Get().ParsedLineComponents;
+            for (var i = 0; i < parseResult.ComponentCount; i++)
+            {
+                var length = lineMeta.ComponentLength(i);
+                if (length <= 0)
+                    continue;
+
+                var componentText = transformedText.Substring(lineMeta.ComponentStart(i), length);
+                if (TextOperations.GetJsonRanges(componentText).Any())
+                    return i;
+            }
+
+            return 0;
+        }
+
         public bool IsCurrentDocument
         {
             get => _isCurrentDocument;

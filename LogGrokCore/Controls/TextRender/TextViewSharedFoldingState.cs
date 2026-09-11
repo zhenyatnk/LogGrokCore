@@ -64,6 +64,15 @@ public class TextViewSharedFoldingState
             CleanupClientRefs();
         }
     }
+
+    public void NotifyChanged(TextView source)
+    {
+        foreach (var (_, clientRef) in _clientRefs)
+        {
+            if (clientRef.TryGetTarget(out var textView) && !ReferenceEquals(textView, source))
+                textView.OnSharedFoldingStateChanged();
+        }
+    }
     
     public void Unregister(TextView textView)
     {

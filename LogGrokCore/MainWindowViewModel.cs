@@ -134,7 +134,7 @@ namespace LogGrokCore
             InvokePropertyChanged(nameof(IsTimelineAtTop));
         }
 
-        private static readonly AvalonDock.Themes.MetroTheme LightDockTheme = new();
+        private static readonly AvalonDock.Themes.Vs2013LightTheme LightDockTheme = new();
         private static readonly AvalonDock.Themes.Vs2013DarkTheme DarkDockTheme = new();
 
         public AvalonDock.Themes.Theme DockTheme => _themeService.IsDark ? DarkDockTheme : LightDockTheme;

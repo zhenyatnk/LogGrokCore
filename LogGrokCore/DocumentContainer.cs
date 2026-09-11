@@ -5,6 +5,7 @@ using DryIoc;
 using LogGrokCore.Controls;
 using LogGrokCore.Controls.GridView;
 using LogGrokCore.Controls.ListControls;
+using LogGrokCore.Controls.TextRender;
 using LogGrokCore.Data;
 using LogGrokCore.Data.Index;
 using LogGrokCore.Data.Virtualization;
@@ -93,6 +94,7 @@ namespace LogGrokCore
                     .Type(request => request.Container.Resolve<LogHeaderCollection>()));
             
             _container.Register<FilterSettings>(Reuse.Singleton);
+            _container.Register<TextViewSharedFoldingState>(Reuse.Singleton);
             
             _container.Register<DocumentViewModel>();
             _container.Register<SearchViewModel>();
@@ -117,8 +119,9 @@ namespace LogGrokCore
                     var columnSettings = r.Resolve<ColumnSettings>();
                     var transofrmationPerformer = r.Resolve<TransformationPerformer>();
                     var timeIndex = r.Resolve<TimeIndex>();
+                    var foldingState = r.Resolve<TextViewSharedFoldingState>();
                     return pattern => new SearchDocumentViewModel(logModelFacade, filterSettings, viewFactory, pattern,
-                        markedLines, columnSettings, transofrmationPerformer, timeIndex);
+                        markedLines, columnSettings, transofrmationPerformer, timeIndex, foldingState);
                 });
             
             // view

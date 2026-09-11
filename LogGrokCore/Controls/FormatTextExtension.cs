@@ -1,19 +1,22 @@
-﻿using System;
+using System;
 using System.Globalization;
-using MahApps.Metro.Converters;
+using System.Windows.Data;
+using System.Windows.Markup;
 
 namespace LogGrokCore.Controls
 {
-    public class FormatTextExtension : MarkupConverter
+    public class FormatTextExtension : MarkupExtension, IValueConverter
     {
-        protected override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public override object ProvideValue(IServiceProvider serviceProvider) => this;
+
+        public object Convert(object? value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is string text && parameter is string format)
                 return string.Format(format, text);
-            return value;
+            return value ?? string.Empty;
         }
 
-        protected override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotSupportedException();
         }
