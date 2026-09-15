@@ -8,13 +8,14 @@ namespace LogGrokCore.Data.IndexTree
             ILeaf<long, LongsLeaf>
     {
         private const int Capacity = 64*1024;
+        private const int InitialCapacity = 1024;
         private readonly long _firstValue;
         private readonly int _firstIndex;
         private readonly List<int> _storage;
         
         public LongsLeaf(long firstValue, int valueIndex)
         {
-            _storage = new List<int>(Capacity) {0};
+            _storage = new List<int>(InitialCapacity) {0};
             _firstIndex = valueIndex;
             _firstValue = firstValue;
         }

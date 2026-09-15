@@ -33,7 +33,7 @@ namespace LogGrokCore.Data
         public string Rent(int size)
         {
             var pooledStringSize = size < 32 ?  32 : Pow2Roundup(size);
-            var bucket = _buckets.GetOrAdd(pooledStringSize, _bucketFactory(pooledStringSize ));
+            var bucket = _buckets.GetOrAdd(pooledStringSize, _bucketFactory);
             return bucket.Rent();
         }
 
