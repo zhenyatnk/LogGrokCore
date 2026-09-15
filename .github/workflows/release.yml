@@ -120,21 +120,21 @@ jobs:
 
           $info = (Get-Item $exe).VersionInfo
           if ($info.ProductVersion -ne $expected) {
-            throw "ProductVersion mismatch for $arch: expected '$expected', got '$($info.ProductVersion)'"
+            throw "ProductVersion mismatch for ${arch}: expected '$expected', got '$($info.ProductVersion)'"
           }
           if ($info.FileVersion -ne $expectedNumeric) {
-            throw "FileVersion mismatch for $arch: expected '$expectedNumeric', got '$($info.FileVersion)'"
+            throw "FileVersion mismatch for ${arch}: expected '$expectedNumeric', got '$($info.FileVersion)'"
           }
 
           $stdout = New-TemporaryFile
           $process = Start-Process -FilePath $exe -ArgumentList "--version" -Wait -PassThru -RedirectStandardOutput $stdout
           $reported = (Get-Content $stdout -Raw).Trim()
           Remove-Item $stdout -Force
-          if ($process.ExitCode -ne 0) { throw "Smoke test exit code for $arch: $($process.ExitCode)" }
+          if ($process.ExitCode -ne 0) { throw "Smoke test exit code for ${arch}: $($process.ExitCode)" }
           if ($reported -ne $expected) {
-            throw "Reported version mismatch for $arch: expected '$expected', got '$reported'"
+            throw "Reported version mismatch for ${arch}: expected '$expected', got '$reported'"
           }
-          Write-Host "Smoke test passed for $arch: $reported"
+          Write-Host "Smoke test passed for ${arch}: $reported"
         }
 
     - name: Install Inno Setup
