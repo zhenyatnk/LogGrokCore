@@ -4,7 +4,7 @@ Guidance for AI agents working in this repository.
 
 ## Project
 
-**LogGrokCore** — a fast WPF log viewer for very large log files. It parses
+**LogGrokX** — a fast WPF log viewer for very large log files. It parses
 structured log lines with configurable regex formats, builds in-memory indexes,
 and supports search, filtering, colorization and marking while streaming files
 that may be many gigabytes.
@@ -19,10 +19,10 @@ Run from the repository root unless noted. The OS shell is Windows PowerShell.
 
 ```powershell
 dotnet restore
-dotnet build LogGrokCore.sln
-dotnet test LogGrokCore.sln
-dotnet run --project LogGrokCore\LogGrokCore.csproj
-dotnet format LogGrokCore.sln
+dotnet build LogGrokX.sln
+dotnet test LogGrokX.sln
+dotnet run --project LogGrokX\LogGrokX.csproj
+dotnet format LogGrokX.sln
 ```
 
 - The build treats several warnings as errors (`NU1605` and the nullable
@@ -36,17 +36,17 @@ dotnet format LogGrokCore.sln
 
 | Project | Purpose |
 | --- | --- |
-| `LogGrokCore` | WPF app: views, view models, controls, theming, DI bootstrap. |
-| `LogGrokCore.Data` | UI-agnostic core: stream loading, line parsing, indexes, search, virtualization. |
-| `LogGrokCore.Tests` | Tests for the UI layer. |
-| `LogGrokCore.Data.Tests` | Tests for the core data layer. |
+| `LogGrokX` | WPF app: views, view models, controls, theming, DI bootstrap. |
+| `LogGrokX.Data` | UI-agnostic core: stream loading, line parsing, indexes, search, virtualization. |
+| `LogGrokX.Tests` | Tests for the UI layer. |
+| `LogGrokX.Data.Tests` | Tests for the core data layer. |
 
-Key areas in `LogGrokCore.Data`: `Loader`/`LoaderImpl` (buffered line-aware
+Key areas in `LogGrokX.Data`: `Loader`/`LoaderImpl` (buffered line-aware
 reader), `RegexBasedLineParser`, `IndexTree`/`LineIndex`/`SearchLineIndex`,
 `Search`/`Pipeline`, `Virtualization`.
 
 The UI layer uses **WPF-UI 4.3.0** (Fluent controls/theming) and
-**AvalonDock 5** for docking. Branding/window title is **LogGrok** plus the
+**AvalonDock 5** for docking. Branding/window title is **LogGrokX** plus the
 build version: `BuildInfo.Version` (release `-p:Version`, default `2.1`).
 JSON folding lives in `Controls/TextRender` (`TextView`,
 `TextViewSharedFoldingState`, `CollapsibleRegionsMachine`, `FoldingManager`).
@@ -84,14 +84,14 @@ JSON folding lives in `Controls/TextRender` (`TextView`,
   templates bind it via `textRender:TextView.SharedFoldingState`. The marked-lines
   view must use `Document.FoldingState` and the same `TextModel.UniqueId` as the
   grid's JSON component, otherwise expansion falls out of sync.
-- The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrok2\`.
+- The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.
 - **Build version** is injected by the `GenerateBuildInfo` / `GenerateAppManifest`
-  targets in `LogGrokCore.csproj`: they write `BuildInfo.g.cs`, `VersionInfo.g.cs`
-  and a version-stamped `LogGrokCore.generated.manifest`. The manifest is fed to
+  targets in `LogGrokX.csproj`: they write `BuildInfo.g.cs`, `VersionInfo.g.cs`
+  and a version-stamped `LogGrokX.generated.manifest`. The manifest is fed to
   the compiler via `Win32Manifest` (overriding `ApplicationManifest` alone is not
-  enough, the SDK snapshots it at evaluation). `LogGrokCore.exe --version` prints
+  enough, the SDK snapshots it at evaluation). `LogGrokX.exe --version` prints
   the version and exits before WPF starts; the release workflow smoke-tests it.
 
 ## Verification
@@ -99,8 +99,8 @@ JSON folding lives in `Controls/TextRender` (`TextView`,
 Minimum bar for any change:
 
 ```powershell
-dotnet build LogGrokCore.sln -t:Rebuild
-dotnet test LogGrokCore.sln
+dotnet build LogGrokX.sln -t:Rebuild
+dotnet test LogGrokX.sln
 ```
 
 Both must succeed with 0 warnings and 0 errors.

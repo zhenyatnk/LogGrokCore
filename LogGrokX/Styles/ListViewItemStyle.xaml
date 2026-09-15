@@ -1,0 +1,94 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:logGrokCore="clr-namespace:LogGrokX"
+                    xmlns:controls="clr-namespace:LogGrokX.Controls"
+                    xmlns:markedLines="clr-namespace:LogGrokX.MarkedLines"
+                    xmlns:gridView="clr-namespace:LogGrokX.Controls.GridView">
+    <controls:ObjectToTypeConverter x:Key="ObjectToTypeConverter" />
+
+    <SolidColorBrush x:Key="LogLineSelectionBrush"
+                     Color="{DynamicResource SystemAccentColorPrimary}"
+                     Opacity="0.35" />
+    <SolidColorBrush x:Key="LogLineSelectionBorderBrush"
+                     Color="{DynamicResource SystemAccentColorPrimary}"
+                     Opacity="0.6" />
+    <SolidColorBrush x:Key="LogLineDefaultDarkForegroundBrush" Color="#FFD2E4F4" />
+
+    <ControlTemplate x:Key="LogLineControlTemplate" 
+                     TargetType="{x:Type ListBoxItem}">
+
+        <Grid MinHeight="{TemplateBinding MinHeight}" Margin="-2,0,0,0" >
+            <Border Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="1"
+                    SnapsToDevicePixels="True" />
+            <GridViewRowPresenter 
+                                  Margin="2,0,-4,0"
+                                  VerticalAlignment="Stretch"
+                                  Columns="{TemplateBinding GridView.ColumnCollection}"
+                                  Content="{TemplateBinding Content}" />
+        </Grid>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="LogHeaderControlTemplate" TargetType="{x:Type ListBoxItem}">
+        <Grid MinHeight="{TemplateBinding MinHeight}" Margin="-2,0,0,0">
+            <Border Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="1"
+                    SnapsToDevicePixels="True" />
+            <gridView:LogGridViewCell Content="{Binding Content.Text,
+                    RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListBoxItem}}}"
+                                      Margin="25, 5, 25, 5"/> 
+        </Grid>
+    </ControlTemplate>
+
+    <Style x:Key="ItemContainerStyle" TargetType="{x:Type ListViewItem}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource Self},
+                         Converter={StaticResource ObjectToTypeConverter}}"
+                         Value="{x:Type logGrokCore:LineViewModel}">
+                <Setter Property="Template" Value="{StaticResource LogLineControlTemplate}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource Self},
+                         Converter={StaticResource ObjectToTypeConverter}}"
+                         Value="{x:Type markedLines:MarkedLineViewModel}">
+                <Setter Property="Template" Value="{StaticResource LogLineControlTemplate}" />
+            </DataTrigger> 
+            <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource Self},
+                            Converter={StaticResource ObjectToTypeConverter}}"
+                         Value="{x:Type logGrokCore:LogHeaderViewModel}">
+                <Setter Property="Template" Value="{StaticResource LogHeaderControlTemplate}" />
+            </DataTrigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource LogLineSelectionBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource LogLineSelectionBorderBrush}" />
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsMouseOver" Value="True" />
+                    <Condition Property="IsSelected" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsMouseOver" Value="True" />
+                    <Condition Property="IsSelected" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource LogLineSelectionBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource LogLineSelectionBorderBrush}" />
+            </MultiTrigger>
+            <DataTrigger Binding="{Binding DataContext.IsDarkTheme,
+                         RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                         Value="True">
+                <Setter Property="Foreground" Value="{StaticResource LogLineDefaultDarkForegroundBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+</ResourceDictionary>

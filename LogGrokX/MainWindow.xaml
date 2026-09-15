@@ -1,0 +1,124 @@
+<ui:FluentWindow x:Class="LogGrokX.MainWindow"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                xmlns:localControls="clr-namespace:LogGrokX.Controls"
+                xmlns:local="clr-namespace:LogGrokX"
+                xmlns:avalonDockExtensions="clr-namespace:LogGrokX.AvalonDockExtensions"
+                d:DataContext="{d:DesignInstance Type=local:MainWindowViewModel, IsDesignTimeCreatable=False}"
+                localControls:DragnDropBehavior.AllowDrop="True"
+                localControls:DragnDropBehavior.DropCommand="{Binding DropCommand}"
+                ExtendsContentIntoTitleBar="True"
+                WindowBackdropType="Mica"
+                WindowCornerPreference="Round"
+                WindowStartupLocation="CenterScreen"
+                MinWidth="1024"
+                MinHeight="640"
+                Width="1360"
+                Height="860"
+                mc:Ignorable="d"
+                Title="{Binding WindowTitle}">
+    <ui:FluentWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/DocumentTemplate.xaml" />
+                <ResourceDictionary Source="Styles/MarkedLinesViewTemplate.xaml" />
+                <ResourceDictionary Source="Styles/ListViewItemStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <localControls:StringShortenerConvereter x:Key="StringShortenerConverter" />
+            <avalonDockExtensions:MenuItemCollection x:Key="AdditionalDocumentMenuItems">
+                <MenuItem Header="Copy Filename" Command="{Binding Model.Content.CopyFilenameToClipboardCommand}" />
+                <MenuItem Header="Copy Full Path" Command="{Binding Model.Content.CopyPathToClipboardCommand}" />
+                <MenuItem Header="Open Containing Folder" Command="{Binding Model.Content.OpenContainingFolderCommand}" />
+            </avalonDockExtensions:MenuItemCollection>
+        </ResourceDictionary>
+    </ui:FluentWindow.Resources>
+
+    <ui:FluentWindow.InputBindings>
+        <KeyBinding Command="{Binding OpenFileCommand}" Gesture="CTRL+O" />
+    </ui:FluentWindow.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="{Binding WindowTitle}">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="TextGrammarWand24" FontSize="16" />
+            </ui:TitleBar.Icon>
+            <ui:TitleBar.TrailingContent>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:Button Appearance="Transparent"
+                               ToolTip="Open log file (Ctrl+O)"
+                               Command="{Binding OpenFileCommand}">
+                        <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
+                    </ui:Button>
+                    <ui:Button Appearance="Transparent"
+                               ToolTip="Toggle light / dark theme"
+                               Command="{Binding ToggleThemeCommand}">
+                        <ui:SymbolIcon FontSize="16">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="{x:Type ui:SymbolIcon}">
+                                    <Setter Property="Symbol" Value="WeatherSunny24" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                            <Setter Property="Symbol" Value="WeatherMoon24" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                    </ui:Button>
+                    <ToggleButton Margin="4,0"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding IsTimelineAtTop, Mode=TwoWay}"
+                                  ToolTip="Place the timeline at the top">
+                        <ui:SymbolIcon Symbol="ArrowSort24" FontSize="16" />
+                    </ToggleButton>
+                    <ui:Button Appearance="Transparent"
+                               ToolTip="Open settings"
+                               Command="{Binding OpenSettings}">
+                        <ui:SymbolIcon Symbol="Settings24" FontSize="16" />
+                    </ui:Button>
+                    <ui:Button Appearance="Transparent"
+                               ToolTip="Exit"
+                               Command="{Binding ExitCommand}">
+                        <ui:SymbolIcon Symbol="Power24" FontSize="16" />
+                    </ui:Button>
+                </StackPanel>
+            </ui:TitleBar.TrailingContent>
+        </ui:TitleBar>
+
+        <DockingManager x:Name="DockingManager"
+                        Grid.Row="1"
+                        Theme="{Binding DockTheme}"
+                        GridSplitterWidth="10"
+                        GridSplitterHeight="10"
+                        avalonDockExtensions:BindingBehavior.CurrentDocument="{Binding CurrentDocument}"
+                        avalonDockExtensions:BindingBehavior.DocumentViewTemplate="{StaticResource DocumentTemplate}"
+                        avalonDockExtensions:BindingBehavior.DocumentsSource="{Binding Documents}"
+                        avalonDockExtensions:BindingBehavior.OnDocumentCloseCommand="{Binding OnDocumentCloseCommand}"
+                        avalonDockExtensions:DocumentContextMenu.AdditionalContextMenuItems="{StaticResource AdditionalDocumentMenuItems}">
+            <DockingManager.LayoutItemContainerStyle>
+                <Style TargetType="{x:Type LayoutItem}">
+                    <Setter Property="ToolTip" Value="{Binding Model.Content.Title}" />
+                    <Setter Property="Title" Value="{Binding Model.Content.Title}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Model.Content.IsCurrentDocument}" Value="True">
+                            <Setter Property="Title" Value="{Binding Model.Content.Title}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Model.Content.IsCurrentDocument}" Value="False">
+                            <Setter Property="Title"
+                                    Value="{Binding Model.Content.Title,
+                            Converter={StaticResource StringShortenerConverter}, ConverterParameter=25}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DockingManager.LayoutItemContainerStyle>
+        </DockingManager>
+    </Grid>
+</ui:FluentWindow>

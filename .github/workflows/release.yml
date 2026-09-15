@@ -65,7 +65,7 @@ jobs:
 
     - name: Publish self-contained (x64)
       run: |
-        dotnet publish LogGrokCore/LogGrokCore.csproj `
+        dotnet publish LogGrokX/LogGrokX.csproj `
           --configuration Release `
           --runtime win-x64 `
           --self-contained true `
@@ -78,7 +78,7 @@ jobs:
 
     - name: Publish framework-dependent (x64)
       run: |
-        dotnet publish LogGrokCore/LogGrokCore.csproj `
+        dotnet publish LogGrokX/LogGrokX.csproj `
           --configuration Release `
           --runtime win-x64 `
           --self-contained false `
@@ -88,7 +88,7 @@ jobs:
 
     - name: Publish self-contained (x86)
       run: |
-        dotnet publish LogGrokCore/LogGrokCore.csproj `
+        dotnet publish LogGrokX/LogGrokX.csproj `
           --configuration Release `
           --runtime win-x86 `
           --self-contained true `
@@ -101,7 +101,7 @@ jobs:
 
     - name: Publish framework-dependent (x86)
       run: |
-        dotnet publish LogGrokCore/LogGrokCore.csproj `
+        dotnet publish LogGrokX/LogGrokX.csproj `
           --configuration Release `
           --runtime win-x86 `
           --self-contained false `
@@ -115,7 +115,7 @@ jobs:
         $expected = "${{ steps.version.outputs.RELEASE_VERSION }}"
         $expectedNumeric = $expected -replace '^(\d+\.\d+\.\d+).*$', '$1'
         foreach ($arch in @("x64", "x86")) {
-          $exe = "./publish/win-$arch-selfcontained/LogGrokCore.exe"
+          $exe = "./publish/win-$arch-selfcontained/LogGrokX.exe"
           if (-not (Test-Path $exe)) { throw "Executable not found: $exe" }
 
           $info = (Get-Item $exe).VersionInfo
@@ -161,7 +161,7 @@ jobs:
           /DMyArchitecturesAllowed=x64compatible `
           /DMySourceDir=publish-x64 `
           /O"./artifacts" `
-          "./installer/LogGrokCore.iss"
+          "./installer/LogGrokX.iss"
 
         & $iscc `
           /DMyAppVersion="$version" `
@@ -171,7 +171,7 @@ jobs:
           "/DMyAppIdLine=AppId={{E9F2AF62-B22A-458C-88CF-1078F8A6CB65}-x86" `
           /DMySourceDir=publish-x86 `
           /O"./artifacts" `
-          "./installer/LogGrokCore.iss"
+          "./installer/LogGrokX.iss"
 
     - name: Sign installers
       shell: pwsh
@@ -200,10 +200,10 @@ jobs:
       shell: pwsh
       run: |
         $version = "${{ steps.version.outputs.RELEASE_VERSION }}"
-        Compress-Archive -Path ./publish/win-x64-selfcontained/* -DestinationPath "./artifacts/LogGrokCore-$version-win-x64-selfcontained.zip"
-        Compress-Archive -Path ./publish/win-x64-fdd/* -DestinationPath "./artifacts/LogGrokCore-$version-win-x64-portable.zip"
-        Compress-Archive -Path ./publish/win-x86-selfcontained/* -DestinationPath "./artifacts/LogGrokCore-$version-win-x86-selfcontained.zip"
-        Compress-Archive -Path ./publish/win-x86-fdd/* -DestinationPath "./artifacts/LogGrokCore-$version-win-x86-portable.zip"
+        Compress-Archive -Path ./publish/win-x64-selfcontained/* -DestinationPath "./artifacts/LogGrokX-$version-win-x64-selfcontained.zip"
+        Compress-Archive -Path ./publish/win-x64-fdd/* -DestinationPath "./artifacts/LogGrokX-$version-win-x64-portable.zip"
+        Compress-Archive -Path ./publish/win-x86-selfcontained/* -DestinationPath "./artifacts/LogGrokX-$version-win-x86-selfcontained.zip"
+        Compress-Archive -Path ./publish/win-x86-fdd/* -DestinationPath "./artifacts/LogGrokX-$version-win-x86-portable.zip"
 
     - name: Generate checksums
       shell: pwsh
@@ -217,7 +217,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}
+        name: LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}
         path: ./artifacts/*
         retention-days: 14
 
@@ -225,24 +225,24 @@ jobs:
       uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ steps.version.outputs.RELEASE_TAG }}
-        name: LogGrokCore ${{ steps.version.outputs.RELEASE_VERSION }}
+        name: LogGrokX ${{ steps.version.outputs.RELEASE_VERSION }}
         draft: false
         prerelease: ${{ steps.version.outputs.IS_PRERELEASE == 'true' }}
         generate_release_notes: true
         files: |
-          ./artifacts/LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-x64-setup.exe
-          ./artifacts/LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-x86-setup.exe
-          ./artifacts/LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-selfcontained.zip
-          ./artifacts/LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-portable.zip
-          ./artifacts/LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-selfcontained.zip
-          ./artifacts/LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-portable.zip
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x64-setup.exe
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x86-setup.exe
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-selfcontained.zip
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-portable.zip
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-selfcontained.zip
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-portable.zip
           ./artifacts/SHA256SUMS.txt
         body: |
           ## Installation
 
           ### Installer (Recommended)
-          - 64-bit Windows: `LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-x64-setup.exe`
-          - 32-bit Windows: `LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-x86-setup.exe`
+          - 64-bit Windows: `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x64-setup.exe`
+          - 32-bit Windows: `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x86-setup.exe`
 
           Run the installer matching your Windows version.
           - Self-contained: no .NET runtime required
@@ -253,13 +253,13 @@ jobs:
 
           ### Portable (Self-contained)
           No .NET runtime required — extract and run.
-          - `LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-selfcontained.zip` (64-bit)
-          - `LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-selfcontained.zip` (32-bit)
+          - `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-selfcontained.zip` (64-bit)
+          - `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-selfcontained.zip` (32-bit)
 
           ### Portable (Framework-dependent)
           Requires [.NET 10 runtime](https://dotnet.microsoft.com/download/dotnet/10.0) — extract and run.
-          - `LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-portable.zip` (64-bit)
-          - `LogGrokCore-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-portable.zip` (32-bit)
+          - `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-portable.zip` (64-bit)
+          - `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-portable.zip` (32-bit)
 
           ## Verification
           SHA-256 checksums for all assets are provided in `SHA256SUMS.txt`.

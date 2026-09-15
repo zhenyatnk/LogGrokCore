@@ -1,9 +1,9 @@
-# LogGrokCore
+# LogGrokX
 
-[![Run Unit tests](https://github.com/zhenyatnk/LogGrokCore/actions/workflows/run-tests.yml/badge.svg)](https://github.com/zhenyatnk/LogGrokCore/actions/workflows/run-tests.yml)
-[![Upload Binaries](https://github.com/zhenyatnk/LogGrokCore/actions/workflows/build_upload.yml/badge.svg)](https://github.com/zhenyatnk/LogGrokCore/actions/workflows/build_upload.yml)
+[![Run Unit tests](https://github.com/zhenyatnk/LogGrokX/actions/workflows/run-tests.yml/badge.svg)](https://github.com/zhenyatnk/LogGrokX/actions/workflows/run-tests.yml)
+[![Upload Binaries](https://github.com/zhenyatnk/LogGrokX/actions/workflows/build_upload.yml/badge.svg)](https://github.com/zhenyatnk/LogGrokX/actions/workflows/build_upload.yml)
 
-A fast WPF log viewer for very large log files. LogGrokCore parses structured
+A fast WPF log viewer for very large log files. LogGrokX parses structured
 log lines with configurable regular expressions, builds in-memory indexes for
 columns and fields, and lets you search, filter, colorize and mark lines while
 remaining responsive even on multi-gigabyte files.
@@ -54,13 +54,13 @@ dotnet build --configuration Release
 The build output is written to `bin\Release\`. Run the application with:
 
 ```powershell
-dotnet run --project LogGrokCore\LogGrokCore.csproj
+dotnet run --project LogGrokX\LogGrokX.csproj
 ```
 
 ## Testing
 
-The solution contains two test projects: `LogGrokCore.Tests` and
-`LogGrokCore.Data.Tests`.
+The solution contains two test projects: `LogGrokX.Tests` and
+`LogGrokX.Data.Tests`.
 
 ```powershell
 dotnet test
@@ -70,16 +70,16 @@ dotnet test
 
 | Project              | Description                                                       |
 | -------------------- | ----------------------------------------------------------------- |
-| `LogGrokCore`        | WPF application: views, view models, controls, theming.           |
-| `LogGrokCore.Data`   | Platform-agnostic core: stream loading, line parsing, indexes, search, virtualization. |
-| `LogGrokCore.Tests`  | Tests for the UI layer.                                           |
-| `LogGrokCore.Data.Tests` | Tests for the core data layer.                                |
+| `LogGrokX`        | WPF application: views, view models, controls, theming.           |
+| `LogGrokX.Data`   | Platform-agnostic core: stream loading, line parsing, indexes, search, virtualization. |
+| `LogGrokX.Tests`  | Tests for the UI layer.                                           |
+| `LogGrokX.Data.Tests` | Tests for the core data layer.                                |
 
 The UI is built on [WPF-UI](https://github.com/lepoco/wpfui) (Fluent controls
 and theming) with [AvalonDock](https://github.com/Dirkster99/AvalonDock) for
 docking.
 
-### `LogGrokCore.Data`
+### `LogGrokX.Data`
 
 - `Loader` / `LoaderImpl` — buffered, line-aware stream reader.
 - `RegexBasedLineParser` — parses lines using the configured log formats.
@@ -132,4 +132,4 @@ Settings:
 ## Downloads
 
 Build artifacts are produced by the **Upload Binaries** workflow and attached to
-the workflow run under `LogGrokCore-build-<run_number>`.
+the workflow run under `LogGrokX-build-<run_number>`.

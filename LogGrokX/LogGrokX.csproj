@@ -1,0 +1,150 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>NU1605, CS8604, CS8625,  CS8602, CS8618, CS8601, CS8603, CS8614, CS8600, CS8610</WarningsAsErrors>
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
+    <ApplicationManifest>LogGrokX.manifest</ApplicationManifest>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Version>2.1</Version>
+    <GitVersion>false</GitVersion>
+    <!-- <PublishTrimmed>true</PublishTrimmed> -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputPath>..\bin\Debug\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>..\bin\Release\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <StartupObject>LogGrokX.Bootstrap.EntryPoint</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Controls\GridView\LogGridViewCell.xaml" />
+    <None Remove="Controls\GridView\LogGridViewHeader.xaml" />
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Dirkster.AvalonDock" Version="5.0.0" />
+    <PackageReference Include="Dirkster.AvalonDock.Serializer.Xml" Version="5.0.0" />
+    <PackageReference Include="Dirkster.AvalonDock.Themes.Metro" Version="5.0.0" />
+    <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="5.0.0" />
+    <PackageReference Include="GitInfo" Version="3.6.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.158" />
+    <PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="NLog" Version="6.2.0" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="6.2.0" />
+    <PackageReference Include="Splat.DryIoc" Version="21.0.0" />
+    <PackageReference Include="TextCopy" Version="6.2.1" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="WPFTextBoxAutoComplete" Version="1.0.5" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\LogGrokX.Data\LogGrokX.Data.csproj" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Folder Include="Diagnostics" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Remove="appsettings.yaml" />
+    <Content Include="appsettings.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <ApplicationDefinition Include="Bootstrap\App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+    </ApplicationDefinition>
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Fonts\JetBrainsMono-Regular.ttf" />
+    <Resource Include="Fonts\JetBrainsMono-Regular.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="nlog.config" />
+    <Content Include="nlog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <Target Name="GenerateBuildInfo" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_BuildInfoVersion>$(Version)</_BuildInfoVersion>
+      <_BuildInfoVersion Condition="'$(_BuildInfoVersion)' == ''">2.1</_BuildInfoVersion>
+      <_BuildInfoVersionNumeric>$([System.Text.RegularExpressions.Regex]::Match('$(_BuildInfoVersion)', '^\d+(\.\d+){0,3}').Value)</_BuildInfoVersionNumeric>
+      <_BuildInfoVersionNumeric Condition="'$(_BuildInfoVersionNumeric)' == ''">2.1</_BuildInfoVersionNumeric>
+      <_BuildInfoFile>$(IntermediateOutputPath)BuildInfo.g.cs</_BuildInfoFile>
+      <_VersionInfoFile>$(IntermediateOutputPath)VersionInfo.g.cs</_VersionInfoFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_BuildInfoFile)"
+                      Lines="namespace LogGrokX%3B internal static class BuildInfo { public const string Version = &quot;$(_BuildInfoVersion)&quot;%3B }"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <_VersionAttribute Include="System.Reflection.AssemblyVersionAttribute">
+        <_Parameter1>$(_BuildInfoVersionNumeric)</_Parameter1>
+      </_VersionAttribute>
+      <_VersionAttribute Include="System.Reflection.AssemblyFileVersionAttribute">
+        <_Parameter1>$(_BuildInfoVersionNumeric)</_Parameter1>
+      </_VersionAttribute>
+      <_VersionAttribute Include="System.Reflection.AssemblyInformationalVersionAttribute">
+        <_Parameter1>$(_BuildInfoVersion)</_Parameter1>
+      </_VersionAttribute>
+    </ItemGroup>
+    <WriteCodeFragment AssemblyAttributes="@(_VersionAttribute)"
+                       Language="C#"
+                       OutputFile="$(_VersionInfoFile)" />
+    <ItemGroup>
+      <Compile Include="$(_BuildInfoFile)" />
+      <Compile Include="$(_VersionInfoFile)" />
+      <FileWrites Include="$(_BuildInfoFile)" />
+      <FileWrites Include="$(_VersionInfoFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GenerateAppManifest" BeforeTargets="CoreCompile" DependsOnTargets="GenerateBuildInfo">
+    <PropertyGroup>
+      <_ManifestVersion>$(_BuildInfoVersionNumeric)</_ManifestVersion>
+      <_ManifestVersion Condition="$(_ManifestVersion.Split('.').Length) == 2">$(_ManifestVersion).0.0</_ManifestVersion>
+      <_ManifestVersion Condition="$(_ManifestVersion.Split('.').Length) == 3">$(_ManifestVersion).0</_ManifestVersion>
+      <_ManifestTemplatePath>$(MSBuildProjectDirectory)\LogGrokX.manifest</_ManifestTemplatePath>
+      <_GeneratedManifestPath>$(IntermediateOutputPath)LogGrokX.generated.manifest</_GeneratedManifestPath>
+      <_ManifestText>$([System.IO.File]::ReadAllText('$(_ManifestTemplatePath)').Replace('version="1.0.0.0"', 'version="$(_ManifestVersion)"'))</_ManifestText>
+      <ApplicationManifest>$(_GeneratedManifestPath)</ApplicationManifest>
+      <Win32Manifest>$(_GeneratedManifestPath)</Win32Manifest>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_GeneratedManifestPath)" Lines="$(_ManifestText)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <FileWrites Include="$(_GeneratedManifestPath)" />
+    </ItemGroup>
+  </Target>
+</Project>
