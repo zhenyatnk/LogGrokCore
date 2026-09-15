@@ -10,6 +10,8 @@
     <NoWarn>$(NoWarn);NU1701</NoWarn>
     <ApplicationManifest>LogGrokCore.manifest</ApplicationManifest>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Version>2.1</Version>
+    <GitVersion>false</GitVersion>
     <!-- <PublishTrimmed>true</PublishTrimmed> -->
   </PropertyGroup>
 
@@ -29,9 +31,6 @@
     <None Remove="Controls\GridView\LogGridViewCell.xaml" />
     <None Remove="Controls\GridView\LogGridViewHeader.xaml" />
     <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="LogGrokCore.manifest">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -96,4 +95,56 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <Target Name="GenerateBuildInfo" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_BuildInfoVersion>$(Version)</_BuildInfoVersion>
+      <_BuildInfoVersion Condition="'$(_BuildInfoVersion)' == ''">2.1</_BuildInfoVersion>
+      <_BuildInfoVersionNumeric>$([System.Text.RegularExpressions.Regex]::Match('$(_BuildInfoVersion)', '^\d+(\.\d+){0,3}').Value)</_BuildInfoVersionNumeric>
+      <_BuildInfoVersionNumeric Condition="'$(_BuildInfoVersionNumeric)' == ''">2.1</_BuildInfoVersionNumeric>
+      <_BuildInfoFile>$(IntermediateOutputPath)BuildInfo.g.cs</_BuildInfoFile>
+      <_VersionInfoFile>$(IntermediateOutputPath)VersionInfo.g.cs</_VersionInfoFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_BuildInfoFile)"
+                      Lines="namespace LogGrokCore%3B internal static class BuildInfo { public const string Version = &quot;$(_BuildInfoVersion)&quot;%3B }"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <_VersionAttribute Include="System.Reflection.AssemblyVersionAttribute">
+        <_Parameter1>$(_BuildInfoVersionNumeric)</_Parameter1>
+      </_VersionAttribute>
+      <_VersionAttribute Include="System.Reflection.AssemblyFileVersionAttribute">
+        <_Parameter1>$(_BuildInfoVersionNumeric)</_Parameter1>
+      </_VersionAttribute>
+      <_VersionAttribute Include="System.Reflection.AssemblyInformationalVersionAttribute">
+        <_Parameter1>$(_BuildInfoVersion)</_Parameter1>
+      </_VersionAttribute>
+    </ItemGroup>
+    <WriteCodeFragment AssemblyAttributes="@(_VersionAttribute)"
+                       Language="C#"
+                       OutputFile="$(_VersionInfoFile)" />
+    <ItemGroup>
+      <Compile Include="$(_BuildInfoFile)" />
+      <Compile Include="$(_VersionInfoFile)" />
+      <FileWrites Include="$(_BuildInfoFile)" />
+      <FileWrites Include="$(_VersionInfoFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GenerateAppManifest" BeforeTargets="CoreCompile" DependsOnTargets="GenerateBuildInfo">
+    <PropertyGroup>
+      <_ManifestVersion>$(_BuildInfoVersionNumeric)</_ManifestVersion>
+      <_ManifestVersion Condition="$(_ManifestVersion.Split('.').Length) == 2">$(_ManifestVersion).0.0</_ManifestVersion>
+      <_ManifestVersion Condition="$(_ManifestVersion.Split('.').Length) == 3">$(_ManifestVersion).0</_ManifestVersion>
+      <_ManifestTemplatePath>$(MSBuildProjectDirectory)\LogGrokCore.manifest</_ManifestTemplatePath>
+      <_GeneratedManifestPath>$(IntermediateOutputPath)LogGrokCore.generated.manifest</_GeneratedManifestPath>
+      <_ManifestText>$([System.IO.File]::ReadAllText('$(_ManifestTemplatePath)').Replace('version="1.0.0.0"', 'version="$(_ManifestVersion)"'))</_ManifestText>
+      <ApplicationManifest>$(_GeneratedManifestPath)</ApplicationManifest>
+      <Win32Manifest>$(_GeneratedManifestPath)</Win32Manifest>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_GeneratedManifestPath)" Lines="$(_ManifestText)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <FileWrites Include="$(_GeneratedManifestPath)" />
+    </ItemGroup>
+  </Target>
 </Project>

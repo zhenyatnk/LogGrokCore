@@ -5,3 +5,6 @@
 *.user
 /bin/
 *_wpftmp.csproj
+/publish/
+/artifacts/
+/installer/publish*/

@@ -46,7 +46,8 @@ reader), `RegexBasedLineParser`, `IndexTree`/`LineIndex`/`SearchLineIndex`,
 `Search`/`Pipeline`, `Virtualization`.
 
 The UI layer uses **WPF-UI 4.3.0** (Fluent controls/theming) and
-**AvalonDock 5** for docking. Branding/window title is **LogGrok 2.1**.
+**AvalonDock 5** for docking. Branding/window title is **LogGrok** plus the
+build version: `BuildInfo.Version` (release `-p:Version`, default `2.1`).
 JSON folding lives in `Controls/TextRender` (`TextView`,
 `TextViewSharedFoldingState`, `CollapsibleRegionsMachine`, `FoldingManager`).
 
@@ -86,6 +87,12 @@ JSON folding lives in `Controls/TextRender` (`TextView`,
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrok2\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.
+- **Build version** is injected by the `GenerateBuildInfo` / `GenerateAppManifest`
+  targets in `LogGrokCore.csproj`: they write `BuildInfo.g.cs`, `VersionInfo.g.cs`
+  and a version-stamped `LogGrokCore.generated.manifest`. The manifest is fed to
+  the compiler via `Win32Manifest` (overriding `ApplicationManifest` alone is not
+  enough, the SDK snapshots it at evaluation). `LogGrokCore.exe --version` prints
+  the version and exits before WPF starts; the release workflow smoke-tests it.
 
 ## Verification
 

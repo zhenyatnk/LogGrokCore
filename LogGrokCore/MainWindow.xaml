@@ -19,7 +19,7 @@
                 Width="1360"
                 Height="860"
                 mc:Ignorable="d"
-                Title="LogGrok 2.1">
+                Title="{Binding WindowTitle}">
     <ui:FluentWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -46,7 +46,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="LogGrok 2.1">
+        <ui:TitleBar Grid.Row="0" Title="{Binding WindowTitle}">
             <ui:TitleBar.Icon>
                 <ui:SymbolIcon Symbol="TextGrammarWand24" FontSize="16" />
             </ui:TitleBar.Icon>

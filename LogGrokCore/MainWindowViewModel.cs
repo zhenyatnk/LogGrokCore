@@ -123,6 +123,8 @@ namespace LogGrokCore
 
         public bool IsDarkTheme => _themeService.IsDark;
 
+        public string WindowTitle => $"LogGrok {BuildInfo.Version}";
+
         public bool IsTimelineAtTop
         {
             get => _timelinePlacementService.IsAtTop;

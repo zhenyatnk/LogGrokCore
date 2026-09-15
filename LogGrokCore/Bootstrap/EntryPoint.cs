@@ -18,6 +18,12 @@ namespace LogGrokCore.Bootstrap
         [STAThread]
         public static void Main(string[] args)
         {
+            if (args.Any(a => string.Equals(a, "--version", StringComparison.OrdinalIgnoreCase)))
+            {
+                Console.WriteLine(BuildInfo.Version);
+                return;
+            }
+
             var command = args.SingleOrDefault();
 
             ConfigureErrorReporting(command);

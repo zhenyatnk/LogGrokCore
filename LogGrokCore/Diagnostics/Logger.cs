@@ -14,6 +14,7 @@ namespace LogGrokCore.Diagnostics
       {
           NLogLogger = LogManager.GetCurrentClassLogger();
           GlobalDiagnosticsContext.Set("EntryAssembly", Assembly.GetEntryAssembly()?.FullName);
+          GlobalDiagnosticsContext.Set("DeploymentVersion", BuildInfo.Version);
       }
       
       private Logger (string component)
