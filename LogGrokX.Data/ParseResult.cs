@@ -1,0 +1,24 @@
+using System;
+using LogGrokX.Data.Monikers;
+
+namespace LogGrokX.Data
+{
+    public readonly struct ParseResult
+    {
+        private readonly int[] _metaPlaceHolder;
+        private readonly int _componentCount;
+
+        internal ParseResult(int componentCount, int[] metaPlaceHolder)
+        {
+            _metaPlaceHolder = metaPlaceHolder;
+            _componentCount = componentCount;
+        }
+
+        public int ComponentCount => _componentCount;
+
+        public LineMetaInformation Get()
+        {
+            return new(_metaPlaceHolder.AsSpan(), _componentCount);
+        }
+    }
+}

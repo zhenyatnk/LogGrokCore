@@ -1,0 +1,12 @@
+using System.Windows.Controls;
+using System.Windows.Input;
+
+namespace LogGrokX.Controls.FilterPopup
+{
+    public static class TextBoxCommands
+    {
+        public static ICommand Clear = new DelegateCommand(
+            textBox => ((TextBox)textBox).Text = string.Empty,
+            textBox => !string.IsNullOrEmpty((textBox as TextBox)?.Text));
+    }
+}

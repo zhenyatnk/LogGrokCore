@@ -1,0 +1,268 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. 1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    env:
+      VERSION: ${{ github.event.inputs.version || github.ref_name }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+        cache: true
+        cache-dependency-path: '**/*.csproj'
+
+    - name: Determine version
+      id: version
+      shell: pwsh
+      run: |
+        $ver = "${{ env.VERSION }}" -replace '^[vV]', ''
+        if (-not $ver) { $ver = "1.0.0" }
+        if ($ver -notmatch '^\d+\.\d+\.\d+([-+][0-9A-Za-z.-]+)?$') {
+          throw "Invalid version '$ver'. Expected SemVer, e.g. 1.2.3 or 1.2.3-beta.1"
+        }
+        $core = $ver -replace '\+.*$', ''
+        $isPrerelease = $core -match '-'
+        $tag = "${{ env.VERSION }}"
+        if ($tag -notmatch '^[vV]') { $tag = "v$tag" }
+        echo "RELEASE_VERSION=$ver" >> $env:GITHUB_OUTPUT
+        echo "RELEASE_TAG=$tag" >> $env:GITHUB_OUTPUT
+        echo "IS_PRERELEASE=$($isPrerelease.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+        echo "Version: $ver (tag: $tag)"
+
+    - name: Restore
+      run: dotnet restore
+
+    - name: Run tests
+      run: dotnet test --configuration Release --no-restore --nologo --verbosity normal
+
+    - name: Publish self-contained (x64)
+      run: |
+        dotnet publish LogGrokX/LogGrokX.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=true `
+          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -p:EnableCompressionInSingleFile=true `
+          -p:Version=${{ steps.version.outputs.RELEASE_VERSION }} `
+          --nologo `
+          --output ./publish/win-x64-selfcontained
+
+    - name: Publish framework-dependent (x64)
+      run: |
+        dotnet publish LogGrokX/LogGrokX.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained false `
+          -p:Version=${{ steps.version.outputs.RELEASE_VERSION }} `
+          --nologo `
+          --output ./publish/win-x64-fdd
+
+    - name: Publish self-contained (x86)
+      run: |
+        dotnet publish LogGrokX/LogGrokX.csproj `
+          --configuration Release `
+          --runtime win-x86 `
+          --self-contained true `
+          -p:PublishSingleFile=true `
+          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -p:EnableCompressionInSingleFile=true `
+          -p:Version=${{ steps.version.outputs.RELEASE_VERSION }} `
+          --nologo `
+          --output ./publish/win-x86-selfcontained
+
+    - name: Publish framework-dependent (x86)
+      run: |
+        dotnet publish LogGrokX/LogGrokX.csproj `
+          --configuration Release `
+          --runtime win-x86 `
+          --self-contained false `
+          -p:Version=${{ steps.version.outputs.RELEASE_VERSION }} `
+          --nologo `
+          --output ./publish/win-x86-fdd
+
+    - name: Smoke test (version)
+      shell: pwsh
+      run: |
+        $expected = "${{ steps.version.outputs.RELEASE_VERSION }}"
+        $expectedNumeric = $expected -replace '^(\d+\.\d+\.\d+).*$', '$1'
+        foreach ($arch in @("x64", "x86")) {
+          $exe = "./publish/win-$arch-selfcontained/LogGrokX.exe"
+          if (-not (Test-Path $exe)) { throw "Executable not found: $exe" }
+
+          $info = (Get-Item $exe).VersionInfo
+          if ($info.ProductVersion -ne $expected) {
+            throw "ProductVersion mismatch for $arch: expected '$expected', got '$($info.ProductVersion)'"
+          }
+          if ($info.FileVersion -ne $expectedNumeric) {
+            throw "FileVersion mismatch for $arch: expected '$expectedNumeric', got '$($info.FileVersion)'"
+          }
+
+          $stdout = New-TemporaryFile
+          $process = Start-Process -FilePath $exe -ArgumentList "--version" -Wait -PassThru -RedirectStandardOutput $stdout
+          $reported = (Get-Content $stdout -Raw).Trim()
+          Remove-Item $stdout -Force
+          if ($process.ExitCode -ne 0) { throw "Smoke test exit code for $arch: $($process.ExitCode)" }
+          if ($reported -ne $expected) {
+            throw "Reported version mismatch for $arch: expected '$expected', got '$reported'"
+          }
+          Write-Host "Smoke test passed for $arch: $reported"
+        }
+
+    - name: Install Inno Setup
+      shell: pwsh
+      run: |
+        choco install innosetup --version=6.7.1 -y --no-progress
+        echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
+    - name: Build installers
+      shell: pwsh
+      run: |
+        $version = "${{ steps.version.outputs.RELEASE_VERSION }}"
+        $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+
+        # Bundle the self-contained builds so the installers do not require a .NET runtime.
+        New-Item -ItemType Directory -Force -Path ./installer/publish-x64 | Out-Null
+        New-Item -ItemType Directory -Force -Path ./installer/publish-x86 | Out-Null
+        Copy-Item -Path ./publish/win-x64-selfcontained/* -Destination ./installer/publish-x64/ -Recurse
+        Copy-Item -Path ./publish/win-x86-selfcontained/* -Destination ./installer/publish-x86/ -Recurse
+
+        & $iscc `
+          /DMyAppVersion="$version" `
+          /DMyArchSuffix=x64 `
+          /DMyArchitecturesAllowed=x64compatible `
+          /DMySourceDir=publish-x64 `
+          /O"./artifacts" `
+          "./installer/LogGrokX.iss"
+
+        & $iscc `
+          /DMyAppVersion="$version" `
+          /DMyArchSuffix=x86 `
+          /DMyArchitecturesAllowed=x86compatible `
+          "/DMyArchitecturesInstallIn64BitModeLine=;" `
+          "/DMyAppIdLine=AppId={{E9F2AF62-B22A-458C-88CF-1078F8A6CB65}-x86" `
+          /DMySourceDir=publish-x86 `
+          /O"./artifacts" `
+          "./installer/LogGrokX.iss"
+
+    - name: Sign installers
+      shell: pwsh
+      env:
+        CODESIGN_CERTIFICATE: ${{ secrets.CODESIGN_CERTIFICATE }}
+        CODESIGN_CERTIFICATE_PASSWORD: ${{ secrets.CODESIGN_CERTIFICATE_PASSWORD }}
+      run: |
+        if (-not $env:CODESIGN_CERTIFICATE) {
+          Write-Host "CODESIGN_CERTIFICATE is not configured; skipping code signing."
+          exit 0
+        }
+        $certPath = Join-Path $env:RUNNER_TEMP "codesign.pfx"
+        [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:CODESIGN_CERTIFICATE))
+        $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+          Where-Object { $_.FullName -match '\\x64\\' } |
+          Sort-Object FullName -Descending | Select-Object -First 1
+        if (-not $signtool) { throw "signtool.exe was not found." }
+        $files = Get-ChildItem ./artifacts -File -Filter "*-setup.exe"
+        foreach ($file in $files) {
+          & $signtool.FullName sign /fd SHA256 /td SHA256 /tr "http://timestamp.digicert.com" /f $certPath /p $env:CODESIGN_CERTIFICATE_PASSWORD $file.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Signing failed: $($file.FullName)" }
+        }
+        Remove-Item $certPath -Force
+
+    - name: Create ZIP archives
+      shell: pwsh
+      run: |
+        $version = "${{ steps.version.outputs.RELEASE_VERSION }}"
+        Compress-Archive -Path ./publish/win-x64-selfcontained/* -DestinationPath "./artifacts/LogGrokX-$version-win-x64-selfcontained.zip"
+        Compress-Archive -Path ./publish/win-x64-fdd/* -DestinationPath "./artifacts/LogGrokX-$version-win-x64-portable.zip"
+        Compress-Archive -Path ./publish/win-x86-selfcontained/* -DestinationPath "./artifacts/LogGrokX-$version-win-x86-selfcontained.zip"
+        Compress-Archive -Path ./publish/win-x86-fdd/* -DestinationPath "./artifacts/LogGrokX-$version-win-x86-portable.zip"
+
+    - name: Generate checksums
+      shell: pwsh
+      run: |
+        Get-ChildItem ./artifacts -File | Sort-Object Name | ForEach-Object {
+          $hash = (Get-FileHash -Algorithm SHA256 -Path $_.FullName).Hash
+          "$hash  $($_.Name)"
+        } | Set-Content -Path ./artifacts/SHA256SUMS.txt -Encoding ascii
+        Get-Content ./artifacts/SHA256SUMS.txt
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}
+        path: ./artifacts/*
+        retention-days: 14
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ steps.version.outputs.RELEASE_TAG }}
+        name: LogGrokX ${{ steps.version.outputs.RELEASE_VERSION }}
+        draft: false
+        prerelease: ${{ steps.version.outputs.IS_PRERELEASE == 'true' }}
+        generate_release_notes: true
+        files: |
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x64-setup.exe
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x86-setup.exe
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-selfcontained.zip
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-portable.zip
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-selfcontained.zip
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-portable.zip
+          ./artifacts/SHA256SUMS.txt
+        body: |
+          ## Installation
+
+          ### Installer (Recommended)
+          - 64-bit Windows: `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x64-setup.exe`
+          - 32-bit Windows: `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x86-setup.exe`
+
+          Run the installer matching your Windows version.
+          - Self-contained: no .NET runtime required
+          - Creates Start Menu shortcut
+          - Optional desktop shortcut
+          - Optional .log/.txt file associations
+          - Standard uninstaller via Add/Remove Programs
+
+          ### Portable (Self-contained)
+          No .NET runtime required — extract and run.
+          - `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-selfcontained.zip` (64-bit)
+          - `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-selfcontained.zip` (32-bit)
+
+          ### Portable (Framework-dependent)
+          Requires [.NET 10 runtime](https://dotnet.microsoft.com/download/dotnet/10.0) — extract and run.
+          - `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-portable.zip` (64-bit)
+          - `LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-portable.zip` (32-bit)
+
+          ## Verification
+          SHA-256 checksums for all assets are provided in `SHA256SUMS.txt`.
+
+          ## Requirements
+          - Windows 10 or later
