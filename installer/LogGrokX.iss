@@ -56,7 +56,6 @@ Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortugue
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "fileassoc_log"; Description: "{cm:AssocLog}"; GroupDescription: "{cm:FileAssoc}"
-Name: "fileassoc_txt"; Description: "{cm:AssocTxt}"; GroupDescription: "{cm:FileAssoc}"; Flags: unchecked
 
 [Dirs]
 ; Logs and crash dumps go under %ProgramData%\LogGrokX\Users\<user>. Grant the Users group
@@ -77,13 +76,9 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Registry]
 Root: HKA; Subkey: "Software\Classes\.log\OpenWithProgids"; ValueType: string; ValueName: "LogGrokX.log"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassoc_log
-Root: HKA; Subkey: "Software\Classes\.txt\OpenWithProgids"; ValueType: string; ValueName: "LogGrokX.txt"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassoc_txt
 Root: HKA; Subkey: "Software\Classes\LogGrokX.log"; ValueType: string; ValueName: ""; ValueData: "Log File"; Flags: uninsdeletekey; Tasks: fileassoc_log
 Root: HKA; Subkey: "Software\Classes\LogGrokX.log\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"; Tasks: fileassoc_log
 Root: HKA; Subkey: "Software\Classes\LogGrokX.log\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Tasks: fileassoc_log
-Root: HKA; Subkey: "Software\Classes\LogGrokX.txt"; ValueType: string; ValueName: ""; ValueData: "Text File"; Flags: uninsdeletekey; Tasks: fileassoc_txt
-Root: HKA; Subkey: "Software\Classes\LogGrokX.txt\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"; Tasks: fileassoc_txt
-Root: HKA; Subkey: "Software\Classes\LogGrokX.txt\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Tasks: fileassoc_txt
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
@@ -91,25 +86,17 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 [CustomMessages]
 english.FileAssoc=File associations:
 english.AssocLog=Associate with .log files
-english.AssocTxt=Associate with .txt files
 russian.FileAssoc=Ассоциации файлов:
 russian.AssocLog=Связать с файлами .log
-russian.AssocTxt=Связать с файлами .txt
 german.FileAssoc=Dateizuordnungen:
 german.AssocLog=Mit .log-Dateien verknüpfen
-german.AssocTxt=Mit .txt-Dateien verknüpfen
 french.FileAssoc=Associations de fichiers :
 french.AssocLog=Associer aux fichiers .log
-french.AssocTxt=Associer aux fichiers .txt
 spanish.FileAssoc=Asociaciones de archivos:
 spanish.AssocLog=Asociar con archivos .log
-spanish.AssocTxt=Asociar con archivos .txt
 japanese.FileAssoc=ファイルの関連付け:
 japanese.AssocLog=.log ファイルに関連付ける
-japanese.AssocTxt=.txt ファイルに関連付ける
 polish.FileAssoc=Skojarzenia plików:
 polish.AssocLog=Skojarz z plikami .log
-polish.AssocTxt=Skojarz z plikami .txt
 brazilianportuguese.FileAssoc=Associações de arquivos:
 brazilianportuguese.AssocLog=Associar a arquivos .log
-brazilianportuguese.AssocTxt=Associar a arquivos .txt
