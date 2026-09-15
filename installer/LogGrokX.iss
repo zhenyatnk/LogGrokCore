@@ -76,14 +76,14 @@ Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Registry]
-Root: HKA; Subkey: "Software\Classes\.log\OpenWithProgids"; ValueType: string; ValueName: "LogGrokX.log"; ValueData: ""; Flags: 64bit uninsdeletevalue; Tasks: fileassoc_log
-Root: HKA; Subkey: "Software\Classes\.txt\OpenWithProgids"; ValueType: string; ValueName: "LogGrokX.txt"; ValueData: ""; Flags: 64bit uninsdeletevalue; Tasks: fileassoc_txt
-Root: HKA; Subkey: "Software\Classes\LogGrokX.log"; ValueType: string; ValueName: ""; ValueData: "Log File"; Flags: 64bit uninsdeletekey; Tasks: fileassoc_log
-Root: HKA; Subkey: "Software\Classes\LogGrokX.log\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"; Flags: 64bit; Tasks: fileassoc_log
-Root: HKA; Subkey: "Software\Classes\LogGrokX.log\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: 64bit; Tasks: fileassoc_log
-Root: HKA; Subkey: "Software\Classes\LogGrokX.txt"; ValueType: string; ValueName: ""; ValueData: "Text File"; Flags: 64bit uninsdeletekey; Tasks: fileassoc_txt
-Root: HKA; Subkey: "Software\Classes\LogGrokX.txt\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"; Flags: 64bit; Tasks: fileassoc_txt
-Root: HKA; Subkey: "Software\Classes\LogGrokX.txt\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: 64bit; Tasks: fileassoc_txt
+Root: HKA; Subkey: "Software\Classes\.log\OpenWithProgids"; ValueType: string; ValueName: "LogGrokX.log"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassoc_log
+Root: HKA; Subkey: "Software\Classes\.txt\OpenWithProgids"; ValueType: string; ValueName: "LogGrokX.txt"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassoc_txt
+Root: HKA; Subkey: "Software\Classes\LogGrokX.log"; ValueType: string; ValueName: ""; ValueData: "Log File"; Flags: uninsdeletekey; Tasks: fileassoc_log
+Root: HKA; Subkey: "Software\Classes\LogGrokX.log\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"; Tasks: fileassoc_log
+Root: HKA; Subkey: "Software\Classes\LogGrokX.log\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Tasks: fileassoc_log
+Root: HKA; Subkey: "Software\Classes\LogGrokX.txt"; ValueType: string; ValueName: ""; ValueData: "Text File"; Flags: uninsdeletekey; Tasks: fileassoc_txt
+Root: HKA; Subkey: "Software\Classes\LogGrokX.txt\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"; Tasks: fileassoc_txt
+Root: HKA; Subkey: "Software\Classes\LogGrokX.txt\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Tasks: fileassoc_txt
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
